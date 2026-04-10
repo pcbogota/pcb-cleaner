@@ -1,4 +1,4 @@
-# <img src="./build/pcbcleaner.ico" alt="Description of image" style="width: 40px; "> PCBogota Clean Script v1.0.0
+# <img src="https://raw.githubusercontent.com/pcbogota/pcb-cleaner/refs/heads/main/build/PCBCleaner.ico" alt="PCB Cleaner Icon" style="width: 40px; "> PCBogota Clean Script v1.0.0
 
 Script de limpieza y mantenimiento para Windows 10 / 11 que integra BleachBit Portable, reglas `winapp2.ini` y comandos nativos del sistema (DISM, CompactOS, vaciado de cachés, desactivación de hibernación, etc.).
 Incluye un **instalador creado con Inno Setup** que permite programar la limpieza automática al inicio de sesión.
@@ -86,7 +86,7 @@ Si quieres modificar qué elementos limpia BleachBit, sigue estos pasos antes de
 ### ⚠️ Nota importante sobre SmartScreen
 
 Al ejecutar el instalador generado, Windows puede mostrar una advertencia de "**editor desconocido**" (SmartScreen).
-Verifica que el instalador haya sido descargado desde el [repositorio oficial de PCBogota](https://www.gihub.com/pcbogota/pcb-cleaner) y permite su ejecución.
+Verifica que el instalador haya sido descargado desde el [repositorio oficial de PCBogota](https://www.github.com/pcbogota/pcb-cleaner) y permite su ejecución.
 
 ---
 
