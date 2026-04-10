@@ -1,0 +1,43 @@
+============================================================
+           PCBogota Cleaner Script - Versión 1.0.0
+============================================================
+
+Este instalador contiene herramientas y recursos sujetos a las
+siguientes condiciones y atribuciones:
+
+1. CRÉDITOS DE DISEÑO Y RECURSOS VISUALES
+------------------------------------------------------------
+- ICONO DEL PROYECTO:
+  Basado en "Clean" de la colección Carbon Design Line Icons.
+  Autor: Carbon Design System.
+  Licencia: Apache License 2.0.
+  Origen: SVG Repo (https://www.svgrepo.com/).
+
+- TIPOGRAFÍA:
+  "Future Earth" diseñada por V. Sarela (FontStruct).
+  Licencia: Creative Commons Attribution No Derivatives (CC BY-ND 3.0).
+  Enlace: http://fontstruct.com/fontstructions/show/477551
+
+2. SOFTWARE DE TERCEROS (BACKEND)
+------------------------------------------------------------
+- MOTOR DE LIMPIEZA: BleachBit (Versión Portable).
+  Autor: Andrew Ziem.
+  Licencia: GNU General Public License v3.0 (GPLv3).
+  El código fuente de BleachBit está disponible en su sitio
+  oficial: https://www.bleachbit.org/
+
+3. LICENCIA DEL SCRIPT Y AUTOMATIZACIÓN (PCBOGOTA)
+------------------------------------------------------------
+Este conjunto de scripts (.ps1, .cmd, .iss) ha sido desarrollado
+por PCBogota como una solución de mantenimiento personalizado.
+
+- Eres libre de usar, estudiar, modificar y distribuir este
+  código para cualquier fin.
+- El autor no ofrece ninguna garantía y no se hace responsable
+  de posibles daños derivados del uso del software.
+- Se distribuye bajo la premisa de "úsalo, mutalo o critícalo",
+  manteniendo siempre la transparencia del origen.
+
+------------------------------------------------------------
+Bogotá, Colombia - 2026
+============================================================

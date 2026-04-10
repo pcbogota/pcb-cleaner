@@ -1,0 +1,20 @@
+# --- Installer --- (Can be generated from inno setup)
+/output/
+
+# --- BleachBit Folder --- (Download is better option)
+# Ignorar la carpeta de BleachBit (se descarga aparte según README)
+/build/BleachBit-*/*
+/build/*.zip
+# Mantain modified (tuned) bleachbit.ini and winapp2.ini
+
+# --- Archivos de Sistema y Editores ---
+.DS_Store
+Thumbs.db
+*.tmp
+*.bak
+
+# Other stuff (Can be generated with svg files)
+/installer/assets/*.png
+
+/src/icon/*.png
+/src/icon/*.xcf
