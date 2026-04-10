@@ -69,7 +69,8 @@ Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 Name: "registrar_tarea"; Description: "Programar limpieza automática al inicio de sesión"; GroupDescription: "Configuración de Automatización:";
 
 [Files]
-Source: "{#BuildPath}\BleachBit-portable\*"; DestDir: "{app}\BleachBit-portable\"; Flags: ignoreversion recursesubdirs
+;BleachBit is not required before installation
+;; Source: "{#BuildPath}\BleachBit-portable\*"; DestDir: "{app}\BleachBit-portable\"; Flags: ignoreversion recursesubdirs
 Source: "{#BuildPath}\CleanTemps.ps1"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildPath}\IniData.psd1"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#BuildPath}\Limpiar.cmd"; DestDir: "{app}"; Flags: ignoreversion
