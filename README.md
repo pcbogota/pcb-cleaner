@@ -145,38 +145,60 @@ El script de Powershell `CleanTemps.ps1` genera automáticamente dos archivos du
 ## Estructura del proyecto
 
 ```text
-PCBCleaner_Project/
-├── Clean temps.code-workspace  <-- Archivo de configuración de vscode para el proyecto
-├── LICENSE                     <-- Licencia del proyecto
-├── README.md                   <-- Este archivo
-├── .gitignore                  <-- Archivo de omisión de archivos y careptas ejecutables
+Clean temps/                            # repositorio Git (monorepo)
+├── Core/                               # LÓGICA COMÚN (scripts PowerShell sin interfaz de usuario final)
+│   ├── bootstrap.ps1                   # Carga helpers, funciones de limpieza comunes, reportes
+│   ├── helpers.ps1                     # Write-Color, Stop-Process amigable, etc.
+│   ├── basic-clean.ps1                 # Funciones: Clear-ChromeCache, Clear-RecycleBin, Invoke-BleachBit...
+│   ├── reports.ps1                     # Get-SpaceMark, New-CleaningReport
+│   └── (opcional) config-defaults.psd1 # Valores por defecto, comunes (verificar que puede ser default)
 │
-├── build/      <-- Todo lo que el instalador empaquetará
-│ ├── CleanTemps.ps1             <-- Script de ejecución
-│ ├── Limpiar.cmd                <-- Lanzador principal (solicita ejecución como administrador)
-│ ├── IniData.psd1               <-- Datos para generar BleachBit.ini
-
-│ └── PCBCleaner.ico             <-- Icono del proyecto
-│ └── BleachBit-5.0.2-portable/  <-- Carpeta con BleachBit Portable version 5.0.2
+├── Editions/
+│   ├── Basic/                        # EDICIÓN LIGERA (solo Windows)
+│   │   ├── Start-BasicClean.ps1      # Orquestador: carga Core, ejecuta limpieza básica, muestra reporte simple
+│   │   └── Limpiar.cmd               # Lanzador para esta edición (puede ser genérico o con nombre distinto)
+│   │
+│   └── FlexiSign/                    # EDICIÓN PLUS (FlexiSign + RIPExpert si cabe)
+│       ├── clean-flexisign.ps1       # Funciones específicas FlexiSign: Stop-FlexiSign, Remove-OldTemp...
+│       ├── clean-ripexpert.ps1       # (si hay) Funciones para RIPExpert
+│       ├── Start-FlexiClean.ps1      # Orquestador: carga Core + limp. específicas, hace limpieza general, reporte avanzado
+│       └── Limpiar.cmd               # Lanzador (puede ser idéntico en contenido, solo cambia la ruta del .ps1)
 │
-├── installer/  <-- Archivos específicos para uso de Inno Setup
-│ ├── installer.iss   <-- Script de compilación para el instalador
-│ ├── license.txt     <-- Licencia del proyecto para el instalador (duplicado con la de la raiz de la carpeta)
-│ └── assets/   <-- Imágenes para el asistente de instalación (Se deben genrar)
-│   ├── png_WizardImage_dpi-xx.png        <-- Imagenes para el asistente de instalación
-│   ├── png_WizardSmallImage_dpi-XXX.png  <-- Imagenes para el icono superior en el asistente de instalación
-│   └── readme.txt                        <-- Listado de los archivos requeridos para el instalador
-├── output/     <-- Carpeta con el ejecutable de instalación
+├── Assets/                           # RECURSOS GRÁFICOS Y DE INSTALACIÓN COMPARTIDOS
+│   ├── Common/                       # Lo que se usa igual en todas las ediciones
+│   │   ├── icon/                     # Los .png del icono base (16, 20, 24... 256 px)
+│   │   ├── wizard branding/          # Imágenes SVG y PNG del wizard genéricas
+│   │   └── PCBCleaner.ico            # Icono principal (si es común)
+│   │
+│   ├── Basic/                        # Recursos específicos de la edición Basic (si los hay)
+│   │   └── (por ahora vacío, o con alguna imagen de wizard si quieres diferenciar)
+│   │
+│   └── FlexiSign/                    # Recursos específicos de FlexiSign (icono con plus, imágenes wizard adaptadas)
+│       ├── PCBCleaner_plus.ico       # Icono con distintivo
+│       └── wizard branding/          # PNGs del wizard con texto "FlexiSign Edition" o similar
 │
-├── src/        <-- Editables de diseño
-│ ├── icon/     <-- Editables relacionados con el icono de la aplicación
-│ │  └── SVG_icon.svg         <-- Archivo editable del icono del proyecto
-│ └ wizard branding
-│    └── SVG_branding.svg  <-- Archivo editable de imagenes para el instalador.
+├── src/                              # FUENTES EDITABLES (GIMP, SVG) - se mantienen para futuros cambios
+│   ├── icon/                         # (igual que antes)
+│   └── wizard branding/
 │
-└── tools/      <-- Pruebas y herramientas internas
-  ├── sliming_bleachbit.ps1 <-- Script de prueba para minificar BleachBit (No recomendado su uso)
-  └── PCB_Windows_TASK.xml <-- XML de tarea programada de muestra
+├── tools/                             # UTILIDADES EXTERNAS Y TAREAS PROGRAMADAS
+│   ├── PCB_Limpieza De Windows_TASK.xml
+│   ├── sliming_bleachbit.ps           # instalador/configurador de BleachBit (común)
+│   └── (posible tarea programada para FlexiSign si difiere)
+│
+├── installer/                         # SCRIPTS DE INNO SETUP
+│   ├── Basic.iss                      # Instalador para la edición Basic
+│   ├── FlexiSign.iss                  # Instalador para la edición FlexiSign
+│   ├── license.txt                    # Licencia común (o una por edición en sus carpetas)
+│   └── (assets de installer globales, si los hay)
+│
+├── build/                             # (opcional, para scripts de compilación automatizada)
+│   └── build.ps1                     # Script que ejecuta los .iss y genera los instaladores
+│
+├── output/                            # Aquí se guardan los instaladores generados (Setup Basic..., Setup Flexi...)
+├── .gitignore
+├── README.md
+└── LICENSE
 ```
 
 ---

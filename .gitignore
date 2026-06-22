@@ -14,7 +14,9 @@ Thumbs.db
 *.bak
 
 # Other stuff (Can be generated with svg files)
-/installer/assets/*.png
+/Assets/Common/Icon/*.png
+/Assets/Flexisign/Icon/*.png
+
 
 /src/icon/*.png
 /src/icon/*.xcf

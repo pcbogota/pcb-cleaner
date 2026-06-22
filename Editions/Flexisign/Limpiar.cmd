@@ -4,7 +4,7 @@ setlocal enabledelayedexpansion
 
 :: Nombre de la aplicaci¢n y archivo .ps1 a ejecutar
 set "title=Limpieza de Google Chrome y Windows"
-set "ps1FilePath=Start-BasicClean.ps1"
+set "ps1FilePath=Start-FlexiClean.ps1"
 
 :: Si argumentos a pasar al script. Si no lleva dejar vac¡o
 set "arguments="
