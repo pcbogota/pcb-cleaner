@@ -4,6 +4,31 @@
 			"path": ".",
 		},
 	],
+	"launch": {
+		"version": "0.2.0",
+		"configurations": [
+			{
+				"name": "Cleaner Basic",
+				"type": "PowerShell",
+				"request": "launch",
+				"script": "${cwd}\\Editions\\Basic\\Start-BasicClean.ps1",
+				"cwd": "${cwd}",
+			},
+			{
+				"name": "Cleaner FelxiSign Edition",
+				"type": "PowerShell",
+				"request": "launch",
+				"script": "${cwd}\\Editions\\Flexisign\\Start-FlexiClean.ps1",
+				"cwd": "${cwd}",
+			},
+			{
+				"name": "PowerShell: Launch Current File",
+				"type": "PowerShell",
+				"request": "launch",
+				"script": "${file}",
+			},
+		],
+	},
 	"settings": {
 		"editor.acceptSuggestionOnEnter": "off",
 		"editor.bracketPairColorization.enabled": true,
