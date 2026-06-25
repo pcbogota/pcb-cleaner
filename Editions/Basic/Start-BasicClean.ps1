@@ -1,6 +1,7 @@
 ﻿[CmdletBinding()]
 param (
 	[switch]$Install,
+	[switch]$Task,
 	[switch]$Auto
 )
 
@@ -17,32 +18,22 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 Clear-Host
 #endregion PivilegesCheck
 
-#region Paths and modules
-$CleanerCorePath = "$PSScriptRoot\Core"
-$CleanerRootPath = "$PSScriptRoot"
-# Verificación de rutas
+#region PCB bootstrap
+
+$global:CleanerCorePath = "$PSScriptRoot\Core"
+$global:CleanerRootPath = "$PSScriptRoot"
+# Verificación de rutas dentro de carpeta de creación del proyecto
 if ($PSScriptRoot -imatch "\\Editions\\Basic") {
 	$CleanerCorePath = Resolve-Path "$PSScriptRoot\..\..\Core"
-	$CleanerRootPath = Resolve-Path "$PSScriptRoot\..\.."
+	$CleanerRootPath = (Resolve-Path "$PSScriptRoot\..\..").Path
 }
 
-#region PCB bootstrap
 Import-Module -DisableNameChecking "$CleanerCorePath\pcb-00-bootstrap.psm1" -Global -Force
 Initialize-PcbExecution
 
 # Carga de modulos adicionales del proyecto
 
 #endregion PCB bootstrap
-
-
-#region Installation
-if ($Install) {
-	Import-Module -DisableNameChecking "$CleanerCorePath\install-Cleaner.psm1" -Global -Force
-}
-#endregion installation
-
-exit
-
 
 #region Variables
 # --- Variables iniciales de espacio en unidad de sistema---
@@ -52,13 +43,47 @@ $global:currentSpace = 0
 $global:results = @()
 
 # Paths
-$bleachbitPath = "$PSScriptRoot\BleachBit-Portable"
-$bleachbitExec = "$bleachbitPath\bleachbit_console.exe"
+$global:bleachbitPath = "$CleanerRootPath\BleachBit-Portable"
+
+# BleachBit download data
+$global:BleachBitData = @{
+	Name           = "BleachBit Portable"
+	Url            = "https://www.bleachbit.org/download/windows"
+	FileRegex      = "BleachBit-.*-portable\.zip"
+	OutputFile     = "BleachBit_portable.zip"
+	DownloadDomain = 'https://download.bleachbit.org'
+}
+
+#WinApp2 URL
+$global:WinappUrl = "https://raw.githubusercontent.com/MoscaDotTo/Winapp2/master/Non-CCleaner/BleachBit/Winapp2.ini"
+
+#endregion Variables
 
 
+$Install = $true
+$auto = $false
+#region Installation
+if ($Install) {
+	$oldProgressPreference = $ProgressPreference
+	$ProgressPreference = 'SilentlyContinue'
+
+	# Preparing BleachBit Portable
+	wrun "Configurar $($BleachBitData.name)"
+	Import-Module -DisableNameChecking "$CleanerCorePath\install-Cleaner.psm1" -Global -Force
+	Get-BleachBit       # Descarga de BleachBit
+	New-BleachBitConfig # bleachbit.ini + Winapp2.ini
+	$CreateTask = $true
+	if ($CreateTask) {
+		New-CleanerScheduledTask
+	}
+	$ProgressPreference = $oldProgressPreference
+	exit
+}
+#endregion installation
+
+exit
 
 #region Execution
-Write-Logo
 
 Write-Host "Iniciando mantenimiento preventivo de almacenamiento..." -ForegroundColor Yellow
 
@@ -79,6 +104,7 @@ if (Test-Path $chromeCache) {
 Set-SpaceMark -Name "Google Chrome"
 
 # 2. Ejecución de BleachBit basada en tus preferencias (.ini)
+$bleachbitExec = "$bleachbitPath\bleachbit_console.exe"
 if (Test-Path $bleachbitExec) {
 	Write-Host "Ejecutando limpieza programada en BleachBit. Espera..." -ForegroundColor Cyan
 	# --preset carga las casillas marcadas.

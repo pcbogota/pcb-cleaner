@@ -88,7 +88,7 @@ Name: "{commondesktop}\Limpieza Manual"; Filename: "{app}\Limpiar.cmd"; IconFile
 [Run]
 ; Ejecuta SI el checkbox "registrar_tarea" está marcado
 Filename: "powershell.exe"; \
-Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\CleanTemps.ps1"" -Install -Auto"; \
+Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\CleanTemps.ps1"" -Install -Auto {code:GetTaskParam}"; \
 Flags: runhidden; \
 StatusMsg: "Registrando Tarea Programada de mantenimiento..."; \
 Check: WizardIsTaskSelected('registrar_tarea')
@@ -102,4 +102,12 @@ begin
     WizardForm.NextButton.Caption := SetupMessage(msgButtonFinish)
   else
     WizardForm.NextButton.Caption := SetupMessage(msgButtonNext);
+end;
+
+function GetTaskParam(Param: String): String;
+begin
+  if WizardIsTaskSelected('registrar_tarea') then
+    Result := '-CreateTask'
+  else
+    Result := '';
 end;

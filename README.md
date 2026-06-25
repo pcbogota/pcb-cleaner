@@ -1,3 +1,5 @@
+# ----- Readme incompleto y con información erronea, --- verficar!!!
+
 # <img src="https://raw.githubusercontent.com/pcbogota/pcb-cleaner/refs/heads/main/build/PCBCleaner.ico" alt="PCB Cleaner Icon" style="width: 40px; "> PCBogota Clean Script v1.0.0
 
 Script de limpieza y mantenimiento para Windows 10 / 11 que integra BleachBit Portable, reglas `winapp2.ini` y comandos nativos del sistema (DISM, CompactOS, vaciado de cachés, desactivación de hibernación, etc.).

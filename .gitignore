@@ -2,10 +2,9 @@
 /output/
 
 # --- BleachBit Folder --- (Download is better option)
-# Ignorar la carpeta de BleachBit (se descarga aparte según README)
-/build/BleachBit-*/*
-/build/*.zip
-# Mantain modified (tuned) bleachbit.ini and winapp2.ini
+# Ignorar archivos de bleachbit (se descarga al momento de instalar)
+/BleachBit-*/*
+/*.zip
 
 # --- Archivos de Sistema y Editores ---
 .DS_Store
@@ -14,9 +13,5 @@ Thumbs.db
 *.bak
 
 # Other stuff (Can be generated with svg files)
-/Assets/Common/Icon/*.png
-/Assets/Flexisign/Icon/*.png
-
-
 /src/icon/*.png
 /src/icon/*.xcf

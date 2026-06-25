@@ -7,8 +7,8 @@
 	} catch {
 		throw "No se ha podido cargar la librería '$PSScriptRoot\$lib.psm1'"
 	}
-	Clear-Host
-	Write-Logo
+	#Clear-Host
+	#Write-Logo
 }
 
 function Initialize-PcbEnvironmentVars {
@@ -118,7 +118,7 @@ function Initialize-PcbElevation {
 }
 
 function Initialize-PcbLibraries {
-	Write-Host ("$($global:TerminalColor.txt.cyan)CONFIGURANDO VARIABLES, ACCESO A CARPETAS Y MODULOS REQUERIDOS...$($global:TerminalColor.reset)")
+	Write-Host "CONFIGURANDO VARIABLES, ACCESO A CARPETAS Y MODULOS REQUERIDOS..." -ForegroundColor Cyan
 
 	# Se requiere de cargla de librería de modulos para poder ejecutar la carga de las otras librerías
 	$lib = "pcb-modules-functions"

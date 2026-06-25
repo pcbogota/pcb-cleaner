@@ -477,7 +477,7 @@ function Reset-EndLine {
 	}
 
 	# Eliminar el último salto de línea y devolver el texto formateado
-	return $formatedText.TrimEnd("`n")
+	return $formatedText.TrimEnd("`r`n")
 }
 
 # Función para mostrar colores y formatos con códigos
@@ -752,7 +752,8 @@ function Write-Logo {
 	$logo += "$($padd)$($Logo_P)$c$c       $($Logo_C)$c$c       $($Logo_B)$c$c   $c$c $($Logo_o)$c$c   $c$c $($Logo_G)$c$c   $c$c $($Logo_o2)$c$c   $c$c   $($Logo_T)$c$c   $($Logo_A)$c$c   $c$c `n"
 	$logo += "$($padd)$($Logo_P)$c$c       $($Logo_C)$c$c$c$c$c$c$c$c $($Logo_B)$c$c$c$c$c$c$c $($Logo_o)$c$c$c$c$c$c$c $($Logo_G)$c$c$c$c$c$c$c $($Logo_o2)$c$c$c$c$c$c$c   $($Logo_T)$c$c   $($Logo_A)$c$c   $c$c `n"
 	$logo += "$($cl.tw)$($cl.ti)$textName`n"
-	$logo += "$($cl.to)$textCopyright`n$([char]0x1b)[0m`n"
+	$logo += "$($cl.to)$textCopyright`n"
+	$logo += "$($TerminalColor.reset)"
 
 	# Escritura del logo
 	Write-Host $logo
@@ -860,6 +861,8 @@ function wInfo {
 	process {
 		# Formatear y mostrar el texto usando Reset-EndLine
 		Write-Host (Reset-EndLine -Text "$($Text)" -custom "$($TerminalColor.txt.bold)$($TerminalColor.txt.cyan)" -Wider:([bool]$wider)) -NoNewline:([bool]$NoNewline)
+
+		[System.Threading.Thread]::Sleep(1)
 	}
 }
 
@@ -950,7 +953,7 @@ function wRun {
 		$Wider = $false
 	)
 	process {
-		Write-Host "  $(Reset-EndLine -Text "$($Text) " -custom "$($TerminalColor.bg.green)$($TerminalColor.txt.white)" -Space -Wider:([bool]$wider))"
+		Write-Host " $(Reset-EndLine -Text "$($Text) " -custom "$($TerminalColor.bg.green)$($TerminalColor.txt.white)" -Space -Wider:([bool]$wider))"
 	}
 }
 
