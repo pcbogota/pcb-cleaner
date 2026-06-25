@@ -23,11 +23,10 @@ Clear-Host
 $global:CleanerCorePath = "$PSScriptRoot\Core"
 $global:CleanerRootPath = "$PSScriptRoot"
 # Verificación de rutas dentro de carpeta de creación del proyecto
-if ($PSScriptRoot -imatch "\\Editions\\Basic") {
-	$CleanerCorePath = Resolve-Path "$PSScriptRoot\..\..\Core"
+if ($CleanerRootPath -imatch "\\Editions\\Basic") {
+	$CleanerCorePath = (Resolve-Path "$PSScriptRoot\..\..\Core").Path
 	$CleanerRootPath = (Resolve-Path "$PSScriptRoot\..\..").Path
 }
-
 Import-Module -DisableNameChecking "$CleanerCorePath\pcb-00-bootstrap.psm1" -Global -Force
 Initialize-PcbExecution
 
@@ -50,7 +49,7 @@ $global:BleachBitData = @{
 	Name           = "BleachBit Portable"
 	Url            = "https://www.bleachbit.org/download/windows"
 	FileRegex      = "BleachBit-.*-portable\.zip"
-	OutputFile     = "BleachBit_portable.zip"
+	OutputFile     = Join-Path -Path $CleanerRootPath "BleachBit_portable.zip"
 	DownloadDomain = 'https://download.bleachbit.org'
 }
 
@@ -61,12 +60,12 @@ $global:WinappUrl = "https://raw.githubusercontent.com/MoscaDotTo/Winapp2/master
 
 
 $Install = $true
-$auto = $false
+$auto = $true
 #region Installation
 if ($Install) {
-	$oldProgressPreference = $ProgressPreference
-	$ProgressPreference = 'SilentlyContinue'
 
+	$oldProgressPreference = $ProgressPreference
+	$global:ProgressPreference = 'SilentlyContinue'
 	# Preparing BleachBit Portable
 	wrun "Configurar $($BleachBitData.name)"
 	Import-Module -DisableNameChecking "$CleanerCorePath\install-Cleaner.psm1" -Global -Force
@@ -76,7 +75,8 @@ if ($Install) {
 	if ($CreateTask) {
 		New-CleanerScheduledTask
 	}
-	$ProgressPreference = $oldProgressPreference
+	$global:ProgressPreference = $oldProgressPreference
+	wWarning "Configuración de $($BleachBitData.Name) terminada."
 	exit
 }
 #endregion installation

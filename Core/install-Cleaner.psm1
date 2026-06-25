@@ -2,15 +2,15 @@
 	# BleachBit download information
 	try {
 		# Get download URL
-		$BleachBitData.OutputFile = Join-Path -Path $CleanerRootPath -ChildPath (Split-Path -Path $BleachBitData.OutputFile -Leaf)
 		$BleachBitData = Get-DownloadURL $BleachBitData
 
 		# Download portable file
 		winfo "Descargando $($BleachBitData.name)..."
-		Invoke-WebRequest -Uri ($BleachBitData.url) -OutFile ($BleachBitData.outputFile) -TimeoutSec 30
-		winfo "Descomprimiendo archivo..."
+		Invoke-WebRequest -Uri ($BleachBitData.url) -OutFile $BleachBitData.outputFile -TimeoutSec 30
+
 		# unzip portable files
-		Expand-Archive -Path $BleachBitData.outputFile -DestinationPath $CleanerRootPath -Force
+		winfo "Descomprimiendo archivo..."
+		Expand-Archive -Path $BleachBitData.outputFile -DestinationPath (Split-Path $BleachBitData.outputFile -Parent) -Force
 
 		if (Test-Path $BleachBitData.outputFile) {
 			Remove-Item -Path $BleachBitData.outputFile -Force
@@ -19,7 +19,7 @@
 		wok "Descarga completada."
 	} catch {
 		$title = "Error al obtener BleachBit"
-		$text = "Se recomienda descargar la versión portable de BleachBit manualmente."
+		$text = $_.Exception.Message
 		wError $title
 		wWarning $text
 		if ($Auto) {
@@ -59,7 +59,7 @@ function Get-DownloadURL {
 	} catch {
 		wWarning "No fue posible conectar a la web de $($ProgramData.Name)."
 		$title = "Descarga de $($ProgramData.Name)"
-		$Text = "No fue posible realizar la descarga del programa.`n`nInstalación terminada."
+		$Text = $_.Exception.Message
 		if ($Auto) {
 			Show-Notification -Title $title -Text $text -duration long -Type error
 		} else {
@@ -86,9 +86,9 @@ function New-BleachBitConfig {
 		"[Portable]`r`n" | Out-File -FilePath $BleachBitiniFile -Encoding utf8
 
 		Add-Content $BleachBitiniFile "[bleachbit]"
-		Add-Content $BleachBitiniFile ($configData.bleachbitIni.bleachbit -replace ("\|", "`r`n"))
+		Add-Content $BleachBitiniFile ($configData.bleachbitIni.bleachbit -replace ("\| ", "`r`n"))
 		Add-Content $BleachBitiniFile "`r`n[tree]"
-		Add-Content $BleachBitiniFile ($configData.bleachbitIni.tree -replace ("\|", "`r`n"))
+		Add-Content $BleachBitiniFile ($configData.bleachbitIni.tree -replace ("\| ", "`r`n"))
 
 		wInfo "Configurando archivo 'winapp2.ini'..."
 		# Getting winamp2.ini
@@ -107,7 +107,7 @@ function New-BleachBitConfig {
 
 		wok "Archivos de configuración completados."
 	} catch {
-		$text = $_
+		$text = $_.Exception.Message
 		$title = "Error al configurar $($BleachBitData.Name)"
 		wError $title
 		wWarning $text
@@ -122,7 +122,7 @@ function New-BleachBitConfig {
 function New-CleanerScheduledTask {
 	try {
 		$scriptFullPath = "$CleanerRootPath\Start-BasicClean.ps1"
-		$taskName = "PCBogota_Limpieza-De-Temporales"
+		$taskName = "PCBogota_Limpieza-de-temporales"
 		wInfo "Registrando la tarea '$taskName'..."
 		$xml = @"
 <?xml version="1.0" encoding="UTF-16"?>
@@ -179,8 +179,8 @@ function New-CleanerScheduledTask {
 		Register-ScheduledTask -TaskName $taskName -Xml $xml -Force -ErrorAction Stop | Out-Null
 		wok "Tarea '$taskName' registrada con éxito."
 	} catch {
-		$text = "Hubo un fallo al inttenar registrar la tarea"
-		$title = "Error al registrar la tarea para $($BleachBitData.Name)"
+		$text = $_.Exception.Message
+		$title = "Error al registrar la tarea para $taskName"
 		wError $title
 		wWarning $text
 		if ($Auto) {
