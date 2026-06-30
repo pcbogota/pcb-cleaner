@@ -44,7 +44,7 @@
 				Import-Module -DisableNameChecking -Name $modulePath -Global -Force
 				Write-Host "$($TerminalColor.txt.blue)Módulo $($lib) cargado"
 			} else {
-				Write-Error "$($TerminalColor.txt.red)No se encontró el módulo '$($lib)'."
+				Write-Error "$($TerminalColor.txt.red)No se encontró el módulo '$($lib)'$($TerminalColor.reset)"
 				Pause
 				exit
 			}

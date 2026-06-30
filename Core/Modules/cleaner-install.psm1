@@ -1,19 +1,21 @@
 ﻿function Get-BleachBit {
 	# BleachBit download information
 	try {
+		$BleachBitData = $global:BleachBitInstallData.bleachbitDownload
+
 		# Get download URL
 		$BleachBitData = Get-DownloadURL $BleachBitData
-
 		# Download portable file
 		winfo "Descargando $($BleachBitData.name)..."
-		Invoke-WebRequest -Uri ($BleachBitData.url) -OutFile $BleachBitData.outputFile -TimeoutSec 30
+		Invoke-WebRequest -Uri ($BleachBitData.url) -OutFile $BleachBitData.OutputFile -TimeoutSec 30
 
 		# unzip portable files
 		winfo "Descomprimiendo archivo..."
-		Expand-Archive -Path $BleachBitData.outputFile -DestinationPath (Split-Path $BleachBitData.outputFile -Parent) -Force
+		$BleachBitData.OutputFile = Join-Path -Path $CleanerRootPath $BleachBitData.OutputFile
+		Expand-Archive -Path $BleachBitData.OutputFile -DestinationPath (Split-Path $BleachBitData.OutputFile -Parent) -Force
 
-		if (Test-Path $BleachBitData.outputFile) {
-			Remove-Item -Path $BleachBitData.outputFile -Force
+		if (Test-Path $BleachBitData.OutputFile) {
+			Remove-Item -Path $BleachBitData.OutputFile -Force
 		}
 
 		wok "Descarga completada."
@@ -74,21 +76,44 @@ function Get-DownloadURL {
 
 #endregion variables
 
+function Install-BleachBit {
+	param(
+		[switch]$Task
+	)
+	$oldProgressPreference = $ProgressPreference
+	$global:ProgressPreference = 'SilentlyContinue'
+
+	#Cargar modulo y datos para instalación
+	$global:BleachBitInstallData = Import-PowerShellDataFile -Path "$CleanerCorePath\Data\bleachbit-config.psd1"
+
+	# Descargar BleachBit Portable
+	wrun "Configurar $($global:BleachBitInstallData.bleachbitDownload.name)"
+	Get-BleachBit       # Descarga de BleachBit
+	New-BleachBitConfig # bleachbit.ini + Winapp2.ini
+	if ($Task) {
+		New-CleanerScheduledTask
+	}
+	$global:ProgressPreference = $oldProgressPreference
+	wWarning "Configuración de $($BleachBitData.Name) terminada."
+
+}
+
+
 function New-BleachBitConfig {
 	try {
 		wInfo "Generando archivo de configuración 'BleachBit.ini'..."
 		$BleachBitiniFile = "$bleachbitPath\BleachBit.ini"
 
 		# Generating BleachBit.ini File
-		$configData = Import-PowerShellDataFile -Path "$PSScriptRoot\IniData.psd1"
+		$configData = $global:BleachBitInstallData.bleachbitIni
 
 		# initialize BleachBit.ini file
 		"[Portable]`r`n" | Out-File -FilePath $BleachBitiniFile -Encoding utf8
 
 		Add-Content $BleachBitiniFile "[bleachbit]"
-		Add-Content $BleachBitiniFile ($configData.bleachbitIni.bleachbit -replace ("\| ", "`r`n"))
+		Add-Content $BleachBitiniFile ($configData.bleachbit -replace ("\|", "`r`n"))
 		Add-Content $BleachBitiniFile "`r`n[tree]"
-		Add-Content $BleachBitiniFile ($configData.bleachbitIni.tree -replace ("\| ", "`r`n"))
+		Add-Content $BleachBitiniFile ($configData.tree -replace ("\|", "`r`n"))
 
 		wInfo "Configurando archivo 'winapp2.ini'..."
 		# Getting winamp2.ini
@@ -98,7 +123,7 @@ function New-BleachBitConfig {
 			New-Item $BleachBitWinApp2Path -ItemType Directory | Out-Null
 		}
 
-		Invoke-WebRequest -Uri $WinappUrl -OutFile $BleachBitWinApp2File -TimeoutSec 30
+		Invoke-WebRequest -Uri $global:BleachBitInstallData.WinappUrl -OutFile $BleachBitWinApp2File -TimeoutSec 30
 
 		# Modifying Winamp2.ini (Comment lines with 'FileExts')
 		$outputText = ((Get-Content $BleachBitWinApp2File) -replace '^.*FileExts.*$', ';$&') -join "`r`n"

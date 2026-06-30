@@ -130,22 +130,20 @@ function Initialize-PcbLibraries {
 	}
 
 	# Lista centralizada de librerías requeridas para la ejecución estándar.
-	$loadLib = @(
-		'basic-clean.psm1'
+	#$loadLib = @(
+	# 'pcb-Take-own.psm1 # Cargado desde función 'Initialize-PcbElevation' en 'pcb-01-Bootstrap.psm1'
+	# 'pcb-Write-to-user.psm1 # Cargado desde función 'Initialize-PcbConsoleUi' en 'pcb-01-Bootstrap.psm1'
 
-		# 'pcb-Take-own.psm1 # Cargado desde función 'Initialize-PcbElevation' en 'pcb-01-Bootstrap.psm1'
-		# 'pcb-Write-to-user.psm1 # Cargado desde función 'Initialize-PcbConsoleUi' en 'pcb-01-Bootstrap.psm1'
-
-	)
+	#)
 
 	# Registro y recarga controlada de módulos.
-	Register-Libraries $loadLib
-	Remove-Variable -Name loadLib -ErrorAction SilentlyContinue
+	# Register-Libraries $loadLib
+	#Remove-Variable -Name loadLib -ErrorAction SilentlyContinue
 	# Solicita privilegios adicionales necesarios para ciertas operaciones del sistema.
 }
 
 #region public functions
-function Initialize-PcbExecution {
+function Initialize-PcbCleanerExecution {
 	Write-Host "Cargando módulo principal de PCBogota. Espera..."
 	Initialize-PcbElevation			# Carga librería pcb-Take-own"
 	Initialize-PcbEnvironmentVars	# Carga librería pcb-SystemTools
@@ -157,4 +155,4 @@ function Initialize-PcbExecution {
 }
 #endregion public functions
 
-Export-ModuleMember -Function Initialize-PcbExecution
+Export-ModuleMember -Function Initialize-PcbCleanerExecution

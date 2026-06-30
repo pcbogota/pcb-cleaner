@@ -27,63 +27,61 @@ if ($CleanerRootPath -imatch "\\Editions\\Basic") {
 	$CleanerCorePath = (Resolve-Path "$PSScriptRoot\..\..\Core").Path
 	$CleanerRootPath = (Resolve-Path "$PSScriptRoot\..\..").Path
 }
-Import-Module -DisableNameChecking "$CleanerCorePath\pcb-00-bootstrap.psm1" -Global -Force
-Initialize-PcbExecution
+Import-Module -DisableNameChecking "$CleanerCorePath\Modules\pcb-00-bootstrap.psm1" -Global -Force
+Initialize-PcbCleanerExecution
 
-# Carga de modulos adicionales del proyecto
+# Cargar modulos adicionales del proyecto y variables globales
+. "$CleanerCorePath\cleaner-initialize.ps1"
 
 #endregion PCB bootstrap
-
-#region Variables
-# --- Variables iniciales de espacio en unidad de sistema---
-$global:initialFreeSpace = Get-FreeSpaceGB
-$global:lastMark = $initialFreeSpace
-$global:currentSpace = 0
-$global:results = @()
-
-# Paths
-$global:bleachbitPath = "$CleanerRootPath\BleachBit-Portable"
-
-# BleachBit download data
-$global:BleachBitData = @{
-	Name           = "BleachBit Portable"
-	Url            = "https://www.bleachbit.org/download/windows"
-	FileRegex      = "BleachBit-.*-portable\.zip"
-	OutputFile     = Join-Path -Path $CleanerRootPath "BleachBit_portable.zip"
-	DownloadDomain = 'https://download.bleachbit.org'
-}
-
-#WinApp2 URL
-$global:WinappUrl = "https://raw.githubusercontent.com/MoscaDotTo/Winapp2/master/Non-CCleaner/BleachBit/Winapp2.ini"
-
-#endregion Variables
-
-
-$Install = $true
-$auto = $true
-#region Installation
+$install = $true
+#region Bleachbit Installation
 if ($Install) {
-
-	$oldProgressPreference = $ProgressPreference
-	$global:ProgressPreference = 'SilentlyContinue'
-	# Preparing BleachBit Portable
-	wrun "Configurar $($BleachBitData.name)"
-	Import-Module -DisableNameChecking "$CleanerCorePath\install-Cleaner.psm1" -Global -Force
-	Get-BleachBit       # Descarga de BleachBit
-	New-BleachBitConfig # bleachbit.ini + Winapp2.ini
-	$CreateTask = $true
-	if ($CreateTask) {
-		New-CleanerScheduledTask
-	}
-	$global:ProgressPreference = $oldProgressPreference
-	wWarning "Configuración de $($BleachBitData.Name) terminada."
+	Import-Module -DisableNameChecking "$CleanerCorePath\Modules\Cleaner-Install.psm1" -Global -Force
+	Install-BleachBit -Task:$Task
 	exit
 }
 #endregion installation
 
+#region Execution
+
+<#
+🔴 FASE 0 — EVALUACIÓN INICIAL (SIEMPRE)
+	- leer del registro en HKLM:\SOFTWARE\PCBogota
+		- Ultima limpieza normal (fecha)
+		- Ultima limpieza agresiva (fecha)
+		(Si ninguno colocar 0)
+		- Mostrar en pantalla ultima vez que se ejecutó la limpieza normal y agresiva
+ 			Si es 0, texto que demuestre que es la primera ejecución, si hay fechas mostrar y guardar tipo 2020-Jun-20 16:48)
+			Mostrar tiempo desde última ejecución, si el tiempo es menor a 1 día, mostrar horas.
+		- Medir espacio total, usado y libre por cada disco (C:, D:, etc.).
+	- Calcular % de uso para cada Unidad.
+	- Guardar estas cifras para el informe final (en memoria/variable).
+	- Decidir modo de ejecución:
+		- Normal: todas las unidades de almacenamiento con uso menor a umbral de porcentaje de uso.
+		- Modo Agresivo: si algún disco ≥ umbral → activa automáticamente limpiezas extra y reducción de sesiones a 1.
+#>
+
+
+
+# --- Fase -1: Pruebas Locas ---
+
+
+# --- Fase 0: Evaluación del sistema---
+$initialShot = Set-Snapshot -Name "Inicial" -Dates (Get-RegistryDates) -Return
+
+Set-Snapshot -Name "PreLimpieza"
+$global:AgressiveMode = Test-DrivesCritical -Drives $initialShot.Drives
+
+# Mostrar en pantalla el resumen inicial
+Show-PreCleanSystemSnapshot -Snapshot $initialShot
+
+
+
 exit
 
-#region Execution
+wError "¿Hay cositas en 'basic-clean.psm1'?"
+exit
 
 Write-Host "Iniciando mantenimiento preventivo de almacenamiento..." -ForegroundColor Yellow
 
@@ -94,6 +92,10 @@ if ($activeChromeProcesses) {
 	$activeChromeProcesses | Stop-Process -Force
 	Start-Sleep -Seconds 3  # Pequeña pausa para que suelte los archivos
 }
+
+
+$global:AgressiveMode = Test-DrivesCritical -Drives (Measure-AllDrives) -Threshold $global:Threshold
+exit
 
 # 1. Limpieza manual de Caché de Chrome (para no tocar el resto del perfil)
 $chromeCache = "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Cache"
@@ -145,7 +147,7 @@ if ($compactStatus -imatch "El sistema se encuentra en el estado compacto") {
 #Forzar el mantenimiento de limpieza de WinSxS de forma silenciosa:
 schtasks /run /tn "\Microsoft\Windows\Servicing\StartComponentCleanup" | Out-Null
 
-Set-SpaceMark -Name "Compatación de Sistema Operativo"  # Marca para espacio
+Set-SpaceMark -Name "Compactación de Sistema Operativo"  # Marca para espacio
 
 # 7. Limpieza de la carpeta de descargas de Windows Update (SoftwareDistribution)
 Write-Host "Verificando carpeta de descargas de Windows Update..." -ForegroundColor Cyan
@@ -180,6 +182,8 @@ if ($activeChromeProcesses) {
 }
 
 # Obtener resumen de espacio
+#Set-SnapshotFinishTime -Name "Initial"
+
 Get-SpaceMark
 
 Pause
