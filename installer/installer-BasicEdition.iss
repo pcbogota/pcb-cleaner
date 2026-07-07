@@ -68,6 +68,8 @@ Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 [Tasks]
 ;Checkbox en la sección de tareas adicionales
 Name: "registrar_tarea"; Description: "Programar limpieza automática al inicio de sesión"; GroupDescription: "Configuración de Automatización:";
+Name: "disable_hibernation"; Description: "Desactivar la hibernación del sistema"; GroupDescription: "Configuración de Automatización:";
+
 
 [Files]
 ;BleachBit is not required before installation
@@ -92,6 +94,18 @@ Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\CleanTemps.ps1"" -
 Flags: runhidden; \
 StatusMsg: "Registrando Tarea Programada de mantenimiento..."; \
 Check: WizardIsTaskSelected('registrar_tarea')
+
+; Nueva entrada: escribe en el registro si se marcó la hibernación
+Filename: "reg.exe"; \
+Parameters: "ADD ""HKLM\Software\PCBogota\PCB Cleaner"" /v DisableHibernation /t REG_DWORD /d 1 /f"; \
+Flags: runhidden; \
+Check: WizardIsTaskSelected('disable_hibernate')
+
+; Opcional: si NO se marcó, asegurar que la clave tenga 0
+Filename: "reg.exe"; \
+Parameters: "DELETE ""HKLM\Software\PCBogota\PCB Cleaner"" /v HibernateDisabled /f"; \
+Flags: runhidden; \
+Check: not WizardIsTaskSelected('disable_hibernation')
 
 [Code]
 procedure CurPageChanged(CurPageID: Integer);

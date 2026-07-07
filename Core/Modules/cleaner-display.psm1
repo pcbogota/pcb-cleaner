@@ -152,6 +152,7 @@ function Format-CustomDate {
 		[datetime]$Date,
 
 		[switch]$LongDate,
+		[switch]$LongTime,
 		[switch]$NoTime,
 		[switch]$OnlyTime
 	)
@@ -173,7 +174,10 @@ function Format-CustomDate {
 	}
 
 	# --- Parte de hora ---
-	$horaStr = $Date.ToString('h:mm tt').ToUpper()  # "3:40 pm" (sin segundos)
+	$horaStr = $Date.ToString('h:mm tt').ToUpper()  # "3:40 PM" (sin segundos)
+	if ($LongTime) {
+		$horaStr = $Date.ToString('HH:mm:ss').ToUpper()  # "3:40:13 PM" (con segundos y formato 24 horas)
+	}
 
 	# --- Combinación según switches ---
 	if ($OnlyTime) {
@@ -316,7 +320,7 @@ function Show-CleaningContext {
 	)
 	# Simplifación de la valiable de colores de texto globales
 	$color = $global:TerminalColor.txt
-	$agress = $global:AgressiveMode
+	$agress = $global:AggressiveMode
 
 	# Array para almacenar las líneas a mostrar
 	$lines = @()
@@ -472,6 +476,7 @@ function Show-PreCleanSystemSnapshot {
 
 	# Impresón de tabla de unidades de almacenamiento
 	Get-SimpleDriveTable -Drives $Snapshot.Drives
+	Write-Host ""
 }
 
 function Show-FinalReport {
@@ -516,4 +521,4 @@ function Show-FinalReport {
 }
 
 # Exportar funciones públicas
-Export-ModuleMember -Function Show-PreCleanSystemSnapshot, Show-FinalReport
+Export-ModuleMember -Function Format-CustomDate, Get-Pluralize, Show-PreCleanSystemSnapshot, Show-FinalReport, Write-ColoredText

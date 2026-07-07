@@ -7,8 +7,6 @@
 	} catch {
 		throw "No se ha podido cargar la librería '$PSScriptRoot\$lib.psm1'"
 	}
-	#Clear-Host
-	#Write-Logo
 }
 
 function Initialize-PcbEnvironmentVars {
@@ -130,16 +128,14 @@ function Initialize-PcbLibraries {
 	}
 
 	# Lista centralizada de librerías requeridas para la ejecución estándar.
-	#$loadLib = @(
-	# 'pcb-Take-own.psm1 # Cargado desde función 'Initialize-PcbElevation' en 'pcb-01-Bootstrap.psm1'
-	# 'pcb-Write-to-user.psm1 # Cargado desde función 'Initialize-PcbConsoleUi' en 'pcb-01-Bootstrap.psm1'
-
-	#)
-
+	$loadLib = @(
+		# 'pcb-Take-own.psm1 # Cargado desde función 'Initialize-PcbElevation' en 'pcb-01-Bootstrap.psm1'
+		# 'pcb-Write-to-user.psm1 # Cargado desde función 'Initialize-PcbConsoleUi' en 'pcb-01-Bootstrap.psm1'
+		'pcb-system-utils.psm1'
+	)
 	# Registro y recarga controlada de módulos.
-	# Register-Libraries $loadLib
-	#Remove-Variable -Name loadLib -ErrorAction SilentlyContinue
-	# Solicita privilegios adicionales necesarios para ciertas operaciones del sistema.
+	Register-Libraries $loadLib
+	Remove-Variable -Name loadLib -ErrorAction SilentlyContinue
 }
 
 #region public functions

@@ -1,0 +1,25 @@
+INSTRUCCIONES PARA CONFIGURAR BLEACHBIT MANUALMENTE
+====================================================
+
+
+--- Por favor no cierres esta ventana hasta terminar ---
+
+1. Descarga la versión portable -- BleachBit portable (.zip)-- desde
+   https://www.bleachbit.org/download/windows.
+
+2. Copia el archivo en una memoria USB.
+
+3. En este computador descomprime el archivo .zip dentro
+   de la carpeta BleachBit-Portable (que ya está creada)
+   en la raíz de instalación de PCB Cleaner.
+
+4. Verifica no existe una serie de carpetas BleachBit-Portable,
+   el archivo bleachbit.exe debe estar en una ruta similar a:
+   C:\Program Files\PCBogota Cleaner Script\BleachBit-Portable\bleachbit.exe
+
+Al cerrar esta ventana continuará la configuración.
+
+Si se decide continuar sin BleachBit, se debe cerrar forzadamente el instalador.
+
+
+En caso de tener dudas contactar con Camilo Salazar.

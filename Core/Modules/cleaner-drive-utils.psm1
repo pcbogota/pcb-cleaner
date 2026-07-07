@@ -81,3 +81,21 @@ function Test-DrivesCritical {
 	}
 	return $false
 }
+
+
+function Get-CriticalDrivesLetter {
+	param(
+		[object[]]$Drives,
+		[double]$Threshold = $global:Threshold
+	)
+	$CriticalDrives = @()
+	foreach ($d in $Drives) {
+		if ($d.Used -ge $Threshold) {
+			$CriticalDrives += $d.Letter
+		}
+	}
+	if ($CriticalDrives.Count -ge 1) {
+		return $CriticalDrives
+	}
+	return $false
+}
