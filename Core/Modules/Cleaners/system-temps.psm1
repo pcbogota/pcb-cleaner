@@ -1,4 +1,7 @@
 ﻿function Clear-SystemTemp {
+	$snapshotName = "Carpetas temporales"
+	Set-Snapshot -Name $snapshotName
+
 	wInfo "Limpiando archivos temporales del sistema..."
 
 	# 1. Temporales del usuario
@@ -19,13 +22,13 @@
 		Remove-Item -Path "$thumbCache\thumbcache_*.db" -Force -ErrorAction SilentlyContinue
 		Remove-Item -Path "$thumbCache\iconcache_*.db" -Force -ErrorAction SilentlyContinue
 	}
-
-	Set-Snapshot -Name "Limpieza de careptas temporales"
+	Set-SnapshotFinishTime -Name $snapshotName
 }
 
 function Clear-SystemLogs {
+	$snapshotName = "Logs de eventos"
+	Set-Snapshot -Name $snapshotName
 	wInfo "Limpiando logs de eventos..."
-
 	try {
 		$logs = wevtutil el 2>$null
 		foreach ($log in $logs) {
@@ -34,4 +37,5 @@ function Clear-SystemLogs {
 	} catch {
 		# Silencioso
 	}
+	Set-SnapshotFinishTime -Name $snapshotName
 }

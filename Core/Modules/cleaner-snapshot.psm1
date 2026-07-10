@@ -48,6 +48,7 @@ function Set-Snapshot {
 		Dates  = $newDates
 	}
 	$global:snapshots += $snapshot
+
 	if ($Return) {
 		return $snapshot
 	}
@@ -60,8 +61,8 @@ function Set-SnapshotFinishTime {
 	$timeNow = [datetime]::Now
 	if ($Name -ne '') {
 		$shot = Get-Snapshot -Name $Name
-		$shot.Dates | Add-Member -MemberType NoteProperty -Name 'finish' -Value $timeNow -Force
+		$shot.Dates.finish = $timeNow
 	} elseif (($global:snapshots.Length) -ge 1) {
-		$global:snapshots[-1].Dates | Add-Member -MemberType NoteProperty -Name 'Finish' -Value $timeNow -Force
+		$global:snapshots[-1].Dates.finish = $timeNow
 	}
 }

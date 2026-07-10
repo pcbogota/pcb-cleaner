@@ -1,4 +1,6 @@
 ﻿function Set-CompactOS {
+	$snapshotName = "Compactación de Sistema Operativo"
+	Set-Snapshot -Name $snapshotName
 	$DriveStatus = Get-CriticalDrivesLetter -Drives (Measure-AllDrives)
 	$isSystemCritical = $env:SystemDrive -in $DriveStatus
 	$compactStatus = compact /compactos:query
@@ -9,5 +11,5 @@
 		wok "Compactación completada." -Wider
 	}
 	schtasks /run /tn "\Microsoft\Windows\Servicing\StartComponentCleanup" | Out-Null
-	Set-Snapshot -Name "Compactación de Sistema Operativo"
+	Set-SnapshotFinishTime -Name $snapshotName
 }

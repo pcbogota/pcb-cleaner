@@ -1,4 +1,6 @@
 ﻿function Clear-ErrorReports {
+	$snapshotName = "Informes de errores de Windows"
+	Set-Snapshot -Name $snapshotName
 	Winfo "Limpiando informes de errores de Windows (WER)..."
 
 	# Ruta de informes a nivel de sistema
@@ -6,9 +8,7 @@
 	# Ruta de informes a nivel de usuario actual
 	$userWerPath = "$env:LOCALAPPDATA\Microsoft\Windows\WER"
 
-	$ProcedureName = "Informes de errores de Windows"
-	Clear-FolderContent -Path $systemWerPath -LogPrefix ("$ProcedureName [Sistema]")
-	Clear-FolderContent -Path $userWerPath -LogPrefix ("$ProcedureName [Usuario]")
-
-	Set-Snapshot -Name $ProcedureName
+	Clear-FolderContent -Path $systemWerPath -LogPrefix ("$snapshotName [Sistema]")
+	Clear-FolderContent -Path $userWerPath -LogPrefix ("$snapshotName [Usuario]")
+	Set-SnapshotFinishTime -Name $snapshotName
 }

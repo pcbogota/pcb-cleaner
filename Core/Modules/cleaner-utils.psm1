@@ -87,11 +87,27 @@ function Invoke-ConsoleTool {
 	# --- Ejecución según necesidad ---
 	if (-not $Log) {
 		# Sin log: ejecución directa, sencilla
-		Start-Process -FilePath $FilePath -ArgumentList $ArgumentList -WindowStyle $WindowStyle -Wait:$Wait
+		$startParams = @{
+			FilePath    = $FilePath
+			WindowStyle = $WindowStyle
+			Wait        = $Wait
+		}
+		if ($ArgumentList) {
+			$startParams.ArgumentList = $ArgumentList
+		}
+
+		Start-Process @startParams
 		return
 	}
+
+	if ($ArgumentList) {
+		$psArgsPart = " $ArgumentList"
+	} else {
+		$psArgsPart = ""
+	}
+
 	# Construir comando PowerShell que ejecuta la herramienta y divide la salida
-	$psCommand = "[Console]::OutputEncoding = [System.Text.Encoding]::GetEncoding(1252); & '$FilePath' $ArgumentList 2>&1 | Tee-Object -FilePath '$logFullPath'"
+	$psCommand = "[Console]::OutputEncoding = [System.Text.Encoding]::GetEncoding(1252); & '$FilePath'$psArgsPart 2>&1 | Tee-Object -FilePath '$logFullPath'"
 
 	# Codificar en Base64 para evitar problemas con comillas y caracteres especiales
 	$bytes = [System.Text.Encoding]::Unicode.GetBytes($psCommand)

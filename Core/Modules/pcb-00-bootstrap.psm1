@@ -131,6 +131,8 @@ function Initialize-PcbLibraries {
 	$loadLib = @(
 		# 'pcb-Take-own.psm1 # Cargado desde función 'Initialize-PcbElevation' en 'pcb-01-Bootstrap.psm1'
 		# 'pcb-Write-to-user.psm1 # Cargado desde función 'Initialize-PcbConsoleUi' en 'pcb-01-Bootstrap.psm1'
+		'pcb-PSUiAutomationCore.psm1'
+		'pcb-Window-sim.psm1',
 		'pcb-system-utils.psm1'
 	)
 	# Registro y recarga controlada de módulos.
@@ -144,8 +146,7 @@ function Initialize-PcbCleanerExecution {
 	Initialize-PcbElevation			# Carga librería pcb-Take-own"
 	Initialize-PcbEnvironmentVars	# Carga librería pcb-SystemTools
 	Initialize-PcbConsoleUi			# Carga librería pcb-Write-to-user
-
-	Initialize-PcbLibraries			# Carga librerias principales del proyecto
+	Initialize-PcbLibraries			# Carga librerias de del proyecto PCBogota
 	wOk("Modulos correctamente cargados!")
 
 }

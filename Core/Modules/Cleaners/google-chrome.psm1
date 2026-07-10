@@ -2,6 +2,8 @@
 	param(
 		[object[]]$ProcessData
 	)
+	$snapshotName = "Google Chrome"
+	Set-Snapshot -Name $snapshotName
 	$p = $ProcessData | Where-Object { $_.Name -eq "chrome" }
 	if (-not $p) {
 		$P = [PSCustomObject]@{
@@ -15,8 +17,7 @@
 
 	$chromeCache = "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Cache"
 	Clear-FolderContent -Path $chromeCache -LogPrefix $p.DisplayName
-	Set-Snapshot -Name $p.DisplayName
-
+	Set-SnapshotFinishTime -Name $snapshotName
 }
 
 function Start-CleanGoogleChromeDeep {
@@ -24,6 +25,8 @@ function Start-CleanGoogleChromeDeep {
 		[string]$ChromeUserData = "$env:LOCALAPPDATA\Google\Chrome\User Data",
 		[switch]$PreserveSessions
 	)
+	$snapshotName = "Limpieza profunda de Google Chrome"
+	Set-Snapshot -Name $snapshotName
 
 	Winfo "Limpiando datos profundos de Google Chrome..."
 
@@ -55,5 +58,5 @@ function Start-CleanGoogleChromeDeep {
 			Clear-FolderContent -Path $folderPath -LogPrefix "Google Chrome (Usuario: $($up.Name)) - $folder"
 		}
 	}
-	Set-Snapshot -Name "Limpieza profunda de Google Chrome"
+	Set-SnapshotFinishTime -Name $snapshotName
 }

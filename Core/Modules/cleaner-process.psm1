@@ -103,10 +103,6 @@ function Stop-ShellProcess {
 	}
 }
 
-function show-reopenProcess {
-	$script:_reopenQueue | select *
-}
-
 # ============================================================
 # Funciones públicas
 # ============================================================
@@ -169,8 +165,14 @@ function Stop-CleanerProcesses {
 	param(
 		[Parameter(Mandatory = $true)]
 		[object[]]$Processes,
-		[switch]$ask
+		[switch]$ask,
+		[switch]$Nopoint
 	)
+	$closeProcessesName = "Cierre de procesos"
+	if (-not $Nopoint) {
+		Set-Snapshot -Name $closeProcessesName
+	}
+	wRun "CIERRE DE PROCESOS"
 
 	foreach ($procDef in $Processes) {
 		# --- 1. Resolver valores por defecto ---
@@ -251,6 +253,10 @@ function Stop-CleanerProcesses {
 
 		$runningProcs | Where-Object { -not $_.HasExited } | Stop-Process -Force
 	}
+	if (-not $Nopoint) {
+		Set-SnapshotFinishTime -Name $closeProcessesName
+	}
+
 }
 
 function Start-ReopenedProcesses {

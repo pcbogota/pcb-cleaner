@@ -1,8 +1,11 @@
 ﻿function Disable-HibernationIfConfigured {
 	# Verificar estado de hibernación desde la instalación
+	$snapshotName = "Deshabilitar Hibernación"
+	Set-Snapshot -Name $snapshotName
 	$regPath = "HKLM:\Software\PCBogota\PCB Cleaner"
 	$userChoice = Get-ItemProperty -Path $regPath -Name "DisableHibernation" -ErrorAction SilentlyContinue
 	if ($null -eq $userChoice -or $userChoice.DisableHibernation -ne 1) {
+		Set-SnapshotFinishTime -Name $snapshotName
 		return
 	}
 
@@ -12,7 +15,6 @@
 	if ($currentlyEnabled) {
 		winfo "Desactivando hibernación del sistema." -Wider
 		powercfg /hibernate off
-		Set-Snapshot -Name "Deshabilitar Hibernación"
 
 		# Cuando la hibernación está desactivada por comandos, Windows la considera una característica completamente apagada,.
 		# La configuración de energía (Panel de control > Opciones de energía > Cambiar configuración del plan >
@@ -24,4 +26,5 @@
 		# Para revertir y reactivar la hibernación manualmente (ejecutar como administrador):
 		# powercfg /hibernate on; Set-ItemProperty -Path "HKLM:\Software\PCBogota\PCB Cleaner" -Name "HibernateDisabled" -Value 0
 	}
+	Set-SnapshotFinishTime -Name $snapshotName
 }

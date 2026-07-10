@@ -13,7 +13,8 @@
 		[Parameter(Mandatory = $true)]
 		[object[]]$Drives
 	)
-
+	$snapshotName = "Papelera de reciclaje"
+	Set-Snapshot -Name $snapshotName
 	foreach ($drive in $Drives) {
 		# La propiedad 'Letter' viene con dos puntos (C:), la quitamos porque el cmdlet espera solo la letra
 		$driveLetter = $drive.Letter -replace ':$', ''
@@ -21,5 +22,5 @@
 		Winfo "Vaciando papelera de la unidad ${driveLetter}:"
 		Clear-RecycleBin -DriveLetter $driveLetter -Force -ErrorAction SilentlyContinue
 	}
-	Set-Snapshot -Name "Papelera de reciclaje"
+	Set-SnapshotFinishTime -Name $snapshotName
 }

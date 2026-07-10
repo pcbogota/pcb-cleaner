@@ -8,144 +8,6 @@
 # Funciones auxiliares privadas
 # ============================================================
 
-
-function _PadString {
-	param([string]$Text, [int]$Width, [string]$Align = 'Left')
-	$len = $Text.Length
-	if ($len -ge $Width) { return $Text.Substring(0, $Width) }
-	$diff = $Width - $len
-	switch ($Align) {
-		'Right' { return (' ' * $diff) + $Text }
-		'Center' {
-			$left = [math]::Floor($diff / 2); $right = $diff - $left
-			return (' ' * $left) + $Text + (' ' * $right)
-		}
-		default { return $Text + (' ' * $diff) }
-	}
-}
-
-function _Format-Duration {
-	param([TimeSpan]$Duration)
-	if ($Duration.TotalHours -ge 1) {
-		return "{0:hh\:mm\:ss}" -f $Duration
-	}
-	return "{0:mm\:ss}" -f $Duration
-}
-
-function _Get-UnitString {
-	param($Unit, [double]$FreeGB, [double]$UsedPercent)
-	$freeStr = Format-ReadableSize $FreeGB
-	$pctStr = "{0:N2} %" -f $UsedPercent
-	return "$($Unit.Letter): $freeStr ($pctStr)"
-}
-
-function _Get-MaxWidths {
-	param([object[]]$Snapshots)
-	$widths = @{}
-	foreach ($snap in $Snapshots) {
-		foreach ($d in $snap.Drives) {
-			$str = _Get-UnitString -Unit $d -FreeGB $d.Free -UsedPercent $d.Used
-			$len = $str.Length
-			if (-not $widths.ContainsKey($d.Letter)) { $widths[$d.Letter] = $len }
-			elseif ($len -gt $widths[$d.Letter]) { $widths[$d.Letter] = $len }
-		}
-	}
-	return $widths
-}
-
-function _Build-LiberadoCell {
-	param(
-		[object[]]$Drives,
-		[hashtable]$MaxWidths,
-		[int]$MaxPerRow = 3
-	)
-	$lines = @()
-	$batch = @()
-	for ($i = 0; $i -lt $Drives.Count; $i++) {
-		$batch += $Drives[$i]
-		if ($batch.Count -eq $MaxPerRow -or $i -eq $Drives.Count - 1) {
-			$parts = foreach ($d in $batch) {
-				$str = _Get-UnitString -Unit $d -FreeGB $d.Free -UsedPercent $d.Used
-				$w = $MaxWidths[$d.Letter]
-				_PadString $str $w 'Left'
-			}
-			$lines += $parts -join " $($script:ANSI.Reset)║ "
-			$batch = @()
-		}
-	}
-	return $lines
-}
-
-function _Format-ReportTable {
-	param(
-		[object[]]$Snapshots,
-		[double]$Threshold,
-		[int]$MaxUnitsPerRow = 3,
-		[int]$ConsoleWidth = 120
-	)
-	$maxWidths = _Get-MaxWidths $Snapshots
-	# Ancho columnas fijas
-	$puntoW = [math]::Max(($Snapshots | ForEach-Object { $_.Name.Length } | Measure-Object -Maximum).Maximum, 10)
-	$duracW = 8
-	$borderChars = 6  # cuenta de bordes izquierdo + ║ + ║ + derecho (4 bordes) más espacios: ya veremos
-	# Calculamos espacio para Liberado
-	$libW = $ConsoleWidth - $puntoW - $duracW - 6  # 6 por los bordes ║ y espacios
-
-	# Ver si con MaxUnitsPerRow cabe
-	$neededWidth = ($maxWidths.Values | Measure-Object -Sum).Sum + (($maxWidths.Count - 1) * 3)  # 3 chars por " ║ "
-	$perRow = $MaxUnitsPerRow
-	while ($perRow -gt 1 -and $neededWidth -gt $libW) {
-		$perRow--
-		$neededWidth = ($maxWidths.Values | Measure-Object -Sum).Sum + (($maxWidths.Count - 1) * 3)
-		# Recalcular neededWidth para el perRow? En realidad el ancho de una línea con perRow unidades es:
-		# suma anchos de esas unidades + (perRow-1)*3. Pero el total de unidades es fijo, si bajamos perRow habrá más líneas,
-		# pero el ancho máximo de una línea será con el perRow unidades más anchas. Esto es complejo.
-		# Simplificamos: si el ancho de TODAS las unidades en una sola línea (con MaxUnitsPerRow) excede libW, reducimos perRow a 2.
-		# Si aún así excede, a 1.
-		$testWidth = 0
-		$count = 0
-		foreach ($w in $maxWidths.Values) {
-			$testWidth += $w
-			$count++
-			if ($count -eq $perRow) { break }
-		}
-		$testWidth += ($count - 1) * 3
-		if ($testWidth -le $libW) { break } else { $perRow-- }
-	}
-
-	$bTop = "╔$('═' * $puntoW)╦$('═' * $duracW)╦$('═' * $libW)╗"
-	$bSep = "╠$('═' * $puntoW)╬$('═' * $duracW)╬$('═' * $libW)╣"
-	$bBottom = "╚$('═' * $puntoW)╩$('═' * $duracW)╩$('═' * $libW)╝"
-
-	$lines = @($bTop)
-	# Cabecera
-	$lines += "║$(_PadString 'Punto' $puntoW 'Center')║$(_PadString 'Duración' $duracW 'Center')║$(_PadString 'Liberado' $libW 'Center')║"
-	$lines += $bSep
-
-	for ($i = 0; $i -lt $Snapshots.Count; $i++) {
-		$snap = $Snapshots[$i]
-		$dur = if ($snap.Dates.finish -ne [datetime]::MinValue) {
-			_Format-Duration ($snap.Dates.finish - $snap.Dates.start)
-		} else { '--' }
-		$liberadoLines = _Build-LiberadoCell -Drives $snap.Drives -MaxWidths $maxWidths -MaxPerRow $perRow
-
-		for ($j = 0; $j -lt $liberadoLines.Count; $j++) {
-			if ($j -eq 0) {
-				$p = _PadString $snap.Name $puntoW 'Left'
-				$d = _PadString $dur $duracW 'Center'
-			} else {
-				$p = ' ' * $puntoW
-				$d = ' ' * $duracW
-			}
-			$libLine = _PadString $liberadoLines[$j] $libW 'Left'
-			$lines += "║$p║$d║$libLine║"
-		}
-		if ($i -lt $Snapshots.Count - 1) { $lines += $bSep }
-	}
-	$lines += $bBottom
-	return $lines
-}
-
 function Format-CustomDate {
 	param(
 		[Parameter(Mandatory)]
@@ -190,6 +52,50 @@ function Format-CustomDate {
 	return "{0} - {1}" -f $fechaStr, $horaStr
 }
 
+function Format-ElapsedTime {
+	param(
+		[Parameter(Mandatory)]
+		[datetime]$Start,
+		[datetime]$End = (Get-Date),
+		[switch]$Short
+	)
+
+	$diff = $End - $Start
+
+	$parts = @()
+	if ($diff.Days -gt 0) {
+		$parts += if ($Short) {
+			"$($diff.Days)d"
+		} else {
+			"$($diff.Days) $(Get-Pluralize ($diff.Days) 'día')"
+  }
+	}
+	if ($diff.Hours -gt 0) {
+		$parts += if ($Short) {
+			"$($diff.Hours)h"
+		} else {
+			"$($diff.Hours) $(Get-Pluralize ($diff.Hours) 'hora')"
+  }
+	}
+	if ($diff.Minutes -gt 0) {
+		$parts += if ($Short) {
+			"$($diff.Minutes)m"
+		} else {
+			"$($diff.Minutes) $(Get-Pluralize ($diff.Minutes) 'minuto')"
+		}
+	}
+	if ($diff.Seconds -gt 0 -or $parts.Count -eq 0) {
+		$parts += if ($Short) {
+			"$($diff.Seconds)s"
+		} else {
+			"$($diff.Seconds) $(Get-Pluralize ($diff.Seconds) 'segundo')"
+		}
+	}
+
+	$result = if ($Short) { $parts -join ' ' } else { $parts -join ', ' }
+	return $result
+}
+
 function Format-ReadableSize {
 	param([double]$GB)
 	if ($GB -ge 1024) { return "{0:N2} TB" -f ($GB / 1024) }
@@ -218,35 +124,6 @@ function Format-TimeSince {
 	return $relativeText
 }
 
-function New-TableLine {
-	param(
-		[string[]]$Columns,
-		[hashtable]$MaxWidths,
-		[hashtable]$Values,
-		[string]$Separator = ' | ',
-		[switch]$header
-	)
-	$parts = @()
-
-	foreach ($col in $Columns) {
-		$w = $MaxWidths[$col]
-		$raw = $Values[$col]
-		$val = if ($null -eq $raw) { '' } else { [string]$raw }
-		$lenVisible = Get-VisibleLength $val
-		$padNeeded = $w - $lenVisible
-		if ($padNeeded -gt 0) {
-			$val += ' ' * $padNeeded
-		}
-		$parts += $val
-	}
-
-	$line = ($parts -join $Separator)
-	if (-not $header) {
-		$line = $line.TrimEnd().TrimEnd($Separator)
-	}
-	return $line
-}
-
 function Get-SimpleDriveTable {
 	param(
 		[object[]]$Drives,
@@ -261,7 +138,7 @@ function Get-SimpleDriveTable {
 			Letra = Write-ColoredText -Text ($d.Letter) -AnsiColor $color -Return
 			Total = Write-ColoredText -Text (Format-ReadableSize $d.Total) -AnsiColor $color -Return
 			Libre = Write-ColoredText -Text (Format-ReadableSize $d.Free) -AnsiColor $color -Return
-			Uso   = Write-ColoredText -Text ("{0:N2} %" -f $d.Used)-AnsiColor $color -Return
+			Uso   = Write-ColoredText -Text ("{0:N2} %" -f $d.Used) -AnsiColor $color -Return
 		}
 	}
 	Write-DynamicTable -Data $lines -Header -Separator "  ║  "
@@ -314,6 +191,36 @@ function Get-VisibleLength {
 	$plain = $Text -replace '\e\[[0-9;]*m', ''
 	return $plain.Length
 }
+
+function New-TableLine {
+	param(
+		[string[]]$Columns,
+		[hashtable]$MaxWidths,
+		[hashtable]$Values,
+		[string]$Separator = ' | ',
+		[switch]$header
+	)
+	$parts = @()
+
+	foreach ($col in $Columns) {
+		$w = $MaxWidths[$col]
+		$raw = $Values[$col]
+		$val = if ($null -eq $raw) { '' } else { [string]$raw }
+		$lenVisible = Get-VisibleLength $val
+		$padNeeded = $w - $lenVisible
+		if ($padNeeded -gt 0) {
+			$val += ' ' * $padNeeded
+		}
+		$parts += $val
+	}
+
+	$line = ($parts -join $Separator)
+	if (-not $header) {
+		$line = $line.TrimEnd().TrimEnd($Separator)
+	}
+	return $line
+}
+
 function Show-CleaningContext {
 	param(
 		[object]$snapshop
@@ -381,6 +288,45 @@ function Show-CleaningContext {
 		$ColorInfo = Write-ColoredText -Text '*La limpieza agresiva' -AnsiColor $Color.Orange -NoNewline -Return
 		Write-Host "$ColorInfo NO GARANTIZA que se reduzca el uso en una unidad."
 	}
+}
+
+function Show-ReportHeader {
+	param(
+		[object[]]$Snapshots = $global:snapshots
+	)
+	$color = $global:TerminalColor.txt
+	if ($Snapshots.Count -eq 0) { return }
+
+	$endTime = ($Snapshots | Where-Object { $_.Dates.finish -ne [datetime]::MinValue } | Select-Object -Last 1).Dates.finish
+	if (-not $endTime) { $endTime = Get-Date }
+
+	# Tiempo de ejecución
+	$timeElapsed = Format-ElapsedTime -Start ($Snapshots[0].Dates.start) -End $endTime -Short
+	Write-Host " -- Tiempo total de ejecución : " -NoNewline
+	Write-ColoredText -Text $timeElapsed -AnsiColor $color.blue
+
+	# Espacio total liberado (entre el último y el primer snapshot)
+	$firstDrives = $Snapshots[0].Drives
+	$lastDrives = $Snapshots[-1].Drives
+	$totalLiberado = 0
+	foreach ($ld in $lastDrives) {
+		$fd = $firstDrives | Where-Object Letter -EQ $ld.Letter
+		if ($fd) { $totalLiberado += ($ld.Free - $fd.Free) }
+	}
+
+	Write-Host " -- Espacio total liberado : " -NoNewline
+	$FreeSpaceText = @{
+		Text = Format-ReadableSize $totalLiberado
+	}
+	if ($totalLiberado -gt 0) {
+		$FreeSpaceText.AnsiColor = $color.green
+	} elseif ($totalLiberado -lt -1) {
+		$FreeSpaceText.AnsiColor = $color.red
+	} else {
+		$FreeSpaceText.AnsiColor = $color.yellow
+	}
+	Write-ColoredText @FreeSpaceText
+	Write-Host ""
 }
 
 function Write-ColoredText {
@@ -456,6 +402,66 @@ function Write-DynamicTable {
 }
 
 
+function Format-ReportTable {
+	param(
+		[object[]]$Snapshots = $global:snapshots,
+		[double]$Threshold = $global:Threshold,
+		[int]$MaxUnitsPerRow = 3,
+		[int]$ConsoleWidth = 120
+	)
+
+	$Lines = @()
+	$ColorText = $global:TerminalColor.txt
+	$ColorReset = $global:TerminalColor.reset
+	for ($i = 0; $i -lt $Snapshots.Count; $i++) {
+		$shot = $Snapshots[$i]
+		if ($i -eq 0) {
+			$shot.Dates.Finish = $Snapshots[$i + 1].Dates.Start
+		}
+
+		if ($null -ne $shot.Dates.Finish -and $shot.Dates.Finish -ne [datetime]::MinValue) {
+			$ElapsedTime = Format-ElapsedTime -Start ($shot.Dates.start) -End $shot.Dates.Finish -Short
+		}
+
+		$ClearedSpace = @()
+		foreach ($d in $shot.Drives) {
+			if ($i -eq 0) {
+				$diff = 0
+			} else {
+				$lastone = $Snapshots[$i - 1].Drives | Where-Object Letter -EQ $d.Letter
+				$diff = $d.free - $lastone.Free
+			}
+			$letter = $d.letter
+			$Cleaned = (Format-ReadableSize ($diff)).PadLeft(9)
+			if ($diff -lt 0) {
+				$color = $ColorText.Yellow
+			} elseif ($diff -ge 1) {
+				$color = $ColorText.green
+			} elseif ($diff -ge 0.1) {
+				$color = $ColorText.cyan
+			} elseif ($diff -gt 0) {
+				$color = $ColorText.blue
+			} else {
+				$color = $ColorReset
+			}
+			$CleanText = Write-ColoredText -Text $cleaned -AnsiColor $color -Return
+			$ClearedSpace += "$letter $CleanText"
+		}
+		if ($ClearedSpace.Count -gt 0) {
+			$DrivesText = $ClearedSpace -join " ║  "
+		} else {
+			$DrivesText = "--"
+		}
+
+		$lines += [PSCustomObject]@{
+			Punto    = $shot.Name
+			Duración = $ElapsedTime
+			Unidades = $DrivesText
+		}
+	}
+	Write-DynamicTable -Data $lines -Separator " ║ " -Header
+}
+
 # ============================================================
 # Funciones públicas
 # ============================================================
@@ -483,42 +489,11 @@ function Show-FinalReport {
 	param(
 		[object[]]$Snapshots = $global:snapshots
 	)
-	if ($Snapshots.Count -eq 0) { return }
+	# Impresion de resumen de limpieza
+	Write-Host "`n"
+	wrun "RESULTADO DE LA LIMPIEZA"
+	Show-ReportHeader
 
-	$threshold = $global:Threshold
-	$startTime = $Snapshots[0].Dates.start
-	$endTime = ($Snapshots | Where-Object { $_.Dates.finish -ne [datetime]::MinValue } | Select-Object -Last 1).Dates.finish
-	if (-not $endTime) { $endTime = Get-Date }
-	$totalDuration = $endTime - $startTime
-
-	# Título
-	Write-Host "╔══════════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-	Write-Host "║ RESULTADO DE LA LIMPIEZA ║" -ForegroundColor Cyan
-	Write-Host "╚══════════════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
-	Write-Host ""
-
-	Write-Host " Tiempo total de ejecución : " -NoNewline
-	Write-Host (_Format-Duration $totalDuration) -ForegroundColor $script:ANSI.Cyan
-
-	# Espacio total liberado (entre el último y el primer snapshot)
-	$firstDrives = $Snapshots[0].Drives
-	$lastDrives = $Snapshots[-1].Drives
-	$totalLiberado = 0
-	foreach ($ld in $lastDrives) {
-		$fd = $firstDrives | Where-Object Letter -EQ $ld.Letter
-		if ($fd) { $totalLiberado += ($ld.Free - $fd.Free) }
-	}
-	$totalLiberadoStr = Format-ReadableSize $totalLiberado
-	Write-Host " Espacio total liberado : " -NoNewline
-	Write-Host $totalLiberadoStr -ForegroundColor $script:ANSI.Green
-	Write-Host ""
-
-	# Tabla de snapshots
-	$reportLines = _Format-ReportTable -Snapshots $Snapshots -Threshold $threshold -ConsoleWidth 120
-	foreach ($line in $reportLines) {
-		Write-Host $line
-	}
+	# Tabla de Reporte de limpiadores
+	Format-ReportTable
 }
-
-# Exportar funciones públicas
-Export-ModuleMember -Function Format-CustomDate, Get-Pluralize, Show-PreCleanSystemSnapshot, Show-FinalReport, Write-ColoredText

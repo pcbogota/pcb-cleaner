@@ -2,12 +2,15 @@
 	param(
 		[int]$KeepLatest = 2
 	)
+	$snapshotName = "Puntos de restauración del sistema"
+	Set-Snapshot -Name $snapshotName
 	Winfo "Verificando puntos de restauración del sistema..."
 
 	# Obtener la lista de sombras (puntos de restauración)
 	$shadows = vssadmin list shadows | Select-String -Pattern "Id. de instantáneas: {(.*?)}" | ForEach-Object { $_.Matches.Groups[1].Value }
 
 	if ($shadows.Count -le $KeepLatest) {
+		Set-SnapshotFinishTime -Name $snapshotName
 		return
 	}
 
@@ -18,5 +21,5 @@
 		$txtId = "{$shadowId}"
 		vssadmin delete shadows /shadow=$txtId /quiet >$null
 	}
-	Set-Snapshot -Name "Puntos de restauración del sistema"
+	Set-SnapshotFinishTime -Name $snapshotName
 }
