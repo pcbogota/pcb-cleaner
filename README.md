@@ -1,4 +1,4 @@
-# <img src="https://raw.githubusercontent.com/pcbogota/pcb-cleaner/refs/heads/main/build/PCBCleaner.ico" alt="PCB Cleaner Icon" style="width: 40px; "> PCBogota Clean Script v1.1.0
+# <img src="https://raw.githubusercontent.com/pcbogota/pcb-cleaner/refs/heads/main/Assets/Common/icon/PCBCleaner.ico" alt="PCB Cleaner Icon" style="width: 40px; "> PCBogota Clean Script v1.1.0
 
 Script de limpieza y mantenimiento para Windows 10 / 11 que integra BleachBit Portable, reglas `winapp2.ini` y comandos nativos del sistema (DISM, CompactOS, vaciado de cachés, desactivación de hibernación, etc.).
 Incluye un **instalador creado con Inno Setup** que permite programar la limpieza automática al inicio de sesión.
