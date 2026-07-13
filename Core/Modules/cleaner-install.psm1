@@ -7,13 +7,17 @@
 	try {
 		# Get download URL
 		$DownloadData = Get-BleachBitDownloadURL $DownloadData
+
 		# Download portable file
 		winfo "Descargando $($DownloadData.name)..."
-		Invoke-WebRequest -Uri ($DownloadData.url) -OutFile $DownloadData.OutputFile -TimeoutSec 30
+		[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+		$DownloadData.OutputFile = Join-Path -Path $global:CleanerRootPath $DownloadData.OutputFile
+		Invoke-WebRequest -Uri ($DownloadData.url) -OutFile $DownloadData.OutputFile -TimeoutSec 30 -ErrorAction Stop
 
 		# unzip portable files
 		winfo "Descomprimiendo archivo..."
-		$DownloadData.OutputFile = Join-Path -Path $CleanerRootPath $DownloadData.OutputFile
+
 		Expand-Archive -Path $DownloadData.OutputFile -DestinationPath (Split-Path $DownloadData.OutputFile -Parent) -Force
 
 		if (Test-Path $DownloadData.OutputFile) {
@@ -133,19 +137,17 @@ function New-BleachBitConfig {
 
 function Install-BleachBit {
 	param(
-		[switch]$Task,
 		[switch]$Auto
 	)
+	#importar modulo de limpieza de bleachbit para configuración de configuradores (bleachbit.ini + winapp2.ini)
+	#Import-Module -DisableNameChecking "$global:CleanerCorePath\Modules\cleaners\bleachbit-portable.psm1" -Force
+
 	$oldProgressPreference = $ProgressPreference
 	$global:ProgressPreference = 'SilentlyContinue'
-
 	$global:connected = Test-Connection 1.1.1.1 -Delay 1 -Count 4 -ErrorAction SilentlyContinue
 
 	#Cargar modulo y datos para instalación
 	$ConfigData = Import-PowerShellDataFile -Path "$CleanerCorePath\Data\bleachbit-config.psd1"
-
-	#importar modulo de limpieza de bleachbit para configuración de configuradores (bleachbit.ini + winapp2.ini)
-	Import-Module -DisableNameChecking "$global:CleanerCorePath\Modules\cleaners\bleachbit-portable.psm1" -Force
 
 	# Descargar BleachBit Portable
 	wrun "Configurar $($ConfigData.bleachbitDownload.name)"
@@ -178,9 +180,6 @@ function Install-BleachBit {
 	# Configuración de bleachbit.ini + Winapp2.ini
 	if (Test-Path "$BBPortPath\bleachbit.exe") {
 		New-BleachBitConfig -ConfigData $ConfigData.bleachbitIni -WinAppUrl $ConfigData.WinappUrl -Auto:$Auto
-	}
-	if ($Task) {
-		New-CleanerScheduledTask -Auto:$Auto
 	}
 	$global:ProgressPreference = $oldProgressPreference
 	wWarning "Configuración de $($BleachBitData.Name) terminada."

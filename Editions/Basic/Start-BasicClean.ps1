@@ -2,7 +2,8 @@
 param (
 	[switch]$Install,
 	[switch]$Task,
-	[switch]$Auto
+	[switch]$Auto,
+	[switch]$DisableHibernation
 )
 
 #region PivilegesCheck
@@ -36,11 +37,16 @@ Initialize-PcbCleanerExecution
 
 
 #region Bleachbit Installation
-#$global:connected = $false
 if ($Install) {
 	Import-Module -DisableNameChecking "$CleanerCorePath\Modules\Cleaner-Install.psm1" -Global -Force
 	Import-Module -DisableNameChecking "$CleanerCorePath\Modules\Cleaners\bleachbit-portable.psm1" -Global -Force
+	Initialize-PCBRegistryPath -Auto:$Auto
+	Set-InstallationDate -Auto:$Auto
+	Set-CleanerHibernationStatus -Auto:$Auto -DisableHibernation:$DisableHibernation
 	Install-BleachBit -Task:$Task -Auto:$Auto
+	if ($Task) {
+		New-CleanerScheduledTask -Auto:$Auto
+	}
 	exit
 }
 #endregion Bleachbit Installation
@@ -112,6 +118,7 @@ Set-compactOS
 
 wInfo "Limpieza finalizada."
 Set-SnapshotFinishTime -Name $initialSnapshotName
+Set-RegistryDates
 
 # Reapertura de procesos cerrados durante la ejecución
 Start-ReopenedProcesses
@@ -119,6 +126,4 @@ Start-Sleep 2
 Write-Host "`n$("="*([console]::WindowWidth - 1) )`n"
 Show-FinalReport
 Write-Host "`n$("="*([console]::WindowWidth - 1) )`n"
-Pause
-exit
 #endregion Execution

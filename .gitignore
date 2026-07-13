@@ -1,7 +1,7 @@
 # --- Installer --- (Can be generated from inno setup)
 /output/
 
-# --- BleachBit Folder --- (Download is better option)
+# --- BleachBit Folder ---
 # Ignorar archivos de bleachbit (se descarga al momento de instalar)
 /BleachBit-*/*
 /*.zip
@@ -15,3 +15,7 @@ Thumbs.db
 # Other stuff (Can be generated with svg files)
 /src/icon/*.png
 /src/icon/*.xcf
+
+# Otros elementos temporales
+/Logs/
+FileList.txt

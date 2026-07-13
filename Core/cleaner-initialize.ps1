@@ -29,8 +29,13 @@ Remove-Variable -Name Libs -ErrorAction SilentlyContinue
 $global:snapshots = @()
 $global:Threshold = 70
 
+
 # Paths
+# Ruta de BleachBit Portable
 $global:bleachbitPath = "$CleanerRootPath\BleachBit-Portable"
+
+# Ruta del registro donde se guardan las fechas
+$global:PCBregPath = 'HKLM:\SOFTWARE\PCBogota\PCB-Cleaner'
 #endregion Variables
 
 # inicialización visual (impresion de logo)

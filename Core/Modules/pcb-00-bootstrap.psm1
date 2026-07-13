@@ -131,9 +131,7 @@ function Initialize-PcbLibraries {
 	$loadLib = @(
 		# 'pcb-Take-own.psm1 # Cargado desde función 'Initialize-PcbElevation' en 'pcb-01-Bootstrap.psm1'
 		# 'pcb-Write-to-user.psm1 # Cargado desde función 'Initialize-PcbConsoleUi' en 'pcb-01-Bootstrap.psm1'
-		'pcb-PSUiAutomationCore.psm1'
-		'pcb-Window-sim.psm1',
-		'pcb-system-utils.psm1'
+		'pcb-Window-sim.psm1'
 	)
 	# Registro y recarga controlada de módulos.
 	Register-Libraries $loadLib

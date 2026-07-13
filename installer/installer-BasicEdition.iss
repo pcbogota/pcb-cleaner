@@ -4,32 +4,40 @@
 
 
 #define MyAppName "PCBogota Cleaner Script"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.1.0"
 #define MyAppPublisher "PCBogota"
 #define MyAppURL "https://www.github.com/PCBogota"
 #define MyAppExeName "Limpiar.cmd"
 
+; Main paths
 #define AppFilesPath "D:\devProjects\Clean temps"
-#define AssetsPath AppFilesPath + "\assets\common"
-#define EditionPath AppFilesPath + "\Editions\Basic"
 #define CorePath AppFilesPath + "\core"
+#define EditionPath AppFilesPath + "\Editions\Basic"
+
+; Assets paths
+#define CommonAssets AppFilesPath + "\Assets\Common"
+#define CommonWizzardAssets CommonAssets + "\wizzard_branding"
+; #define EditionAssets AppFilesPath + "\Assets\<Edition>"
+; #define EditionWizzardAssets CommonAssets + "\wizzard_branding"
+
+; Powershell clean script file name
+#define CleanScript "Start-BasicClean.ps1"
 
 #define Lastpage "wpSelectTasks"
 
-
-#define MultiImage(WizzImage) \
-  AssetsPath + "\wizzard_branding\png_" + WizzImage + "_dpi-100.png," + \
-  AssetsPath + "\wizzard_branding\png_" + WizzImage + "_dpi-125.png," + \
-  AssetsPath + "\wizzard_branding\png_" + WizzImage + "_dpi-150.png," + \
-  AssetsPath + "\wizzard_branding\png_" + WizzImage + "_dpi-175.png," + \
-  AssetsPath + "\wizzard_branding\png_" + WizzImage + "_dpi-200.png," + \
-  AssetsPath + "\wizzard_branding\png_" + WizzImage + "_dpi-225.png," + \
-  AssetsPath + "\wizzard_branding\png_" + WizzImage + "_dpi-250.png"
-
+; functions
+#define GetDPIImageList(BaseFolder, ImageName) \
+  BaseFolder + "\png_" + ImageName + "_dpi-100.png," + \
+  BaseFolder + "\png_" + ImageName + "_dpi-125.png," + \
+  BaseFolder + "\png_" + ImageName + "_dpi-150.png," + \
+  BaseFolder + "\png_" + ImageName + "_dpi-175.png," + \
+  BaseFolder + "\png_" + ImageName + "_dpi-200.png," + \
+  BaseFolder + "\png_" + ImageName + "_dpi-225.png," + \
+  BaseFolder + "\png_" + ImageName + "_dpi-250.png"
 
 [Setup]
-; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
-; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
+; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for
+; other applications, but change for other editions.
 AppCopyright=Copyright (C) 2026 PCBogota.
 AppId={{911E6179-DC8E-4D99-9A42-3AF9238B2AB9}
 AppName={#MyAppName}
@@ -45,22 +53,30 @@ DisableProgramGroupPage=yes
 DisableReadyMemo=yes
 DisableReadyPage=yes
 DisableWelcomePage=no
-LicenseFile=License.txt
+LicenseFile={#AppFilesPath}\installer\license.txt
 OutputBaseFilename=Setup {#MyAppName} v{#MyAppVersion}
-OutputDir={#AppFilesPath}\Output
+OutputDir={#AppFilesPath}\output
 PrivilegesRequired=admin
-SetupIconFile="{#EditionPath}\PCBCleaner.ico"
+SetupIconFile="{#CommonAssets}\Icon\PCBCleaner.ico"
 SolidCompression=yes
 WizardStyle=modern dynamic windows11
 
 ;;;BRANDING IMAGES
 ; WizardImageFile DPI: 100%=202x386, 125%=269x515, 150%=336x643, 175%=403x772, 200%=430x824, 225%=498x953, 250%=534x1022
-WizardImageFile={#MultiImage("WizardImage")}
-WizardImageFileDynamicDark={#MultiImage("WizardImage")}
+
+; For basic edition
+WizardImageFile={#GetDPIImageList(CommonWizzardAssets, "WizardImage")}
+WizardImageFileDynamicDark={#GetDPIImageList(CommonWizzardAssets, "WizardImage")}
+
+; For other editions comment the above two lines an use these instead:
+; WizardImageFile={#GetDPIImageList(EditionWizzardAssets, "WizardImage")}
+; WizardImageFileDynamicDark={#GetDPIImageList(EditionWizzardAssets, "WizardImage")}
+
 
 ;WizardSmallImageFile DPI: 100%=58x58, 125%=77x77, 150%=97x97, 175%=116x116, 200%=124x124, 225%=143x143, 250%=159x159
-WizardSmallImageFile={#MultiImage("WizardSmallImage")}
-WizardSmallImageFileDynamicDark={#MultiImage("WizardSmallImage")}
+; Small Image is common for all editions
+WizardSmallImageFile={#GetDPIImageList(CommonWizzardAssets, "WizardSmallImage")}
+WizardSmallImageFileDynamicDark={#GetDPIImageList(CommonWizzardAssets, "WizardSmallImage")}
 
 [Languages]
 Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
@@ -68,44 +84,38 @@ Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 [Tasks]
 ;Checkbox en la sección de tareas adicionales
 Name: "registrar_tarea"; Description: "Programar limpieza automática al inicio de sesión"; GroupDescription: "Configuración de Automatización:";
-Name: "disable_hibernation"; Description: "Desactivar la hibernación del sistema"; GroupDescription: "Configuración de Automatización:";
-
+Name: "disable_hibernation"; Description: "Forzar desactivar hibernación del sistema"; GroupDescription: "Configuración de Automatización:";
 
 [Files]
 ;BleachBit is not required before installation
 ;; Source: "{#EditionPath}\BleachBit-portable\*"; DestDir: "{app}\BleachBit-portable\"; Flags: ignoreversion recursesubdirs
-Source: "{#CorePath}\basic-clean.ps1.ps1"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#CorePath}\IniData.psd1"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#CorePath}\Faltan archivos de core.psd1"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#EditionPath}\Limpiar.cmd"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#EditionPath}\Start-BasicClean.cmd"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#AssetsPath}\icon\PCBCleaner.ico"; DestDir: "{app}"; Flags: ignoreversion
-Source: "license.txt"; DestDir: "{app}"; Flags: ignoreversion
+
+; Every file of Core logic
+Source: "{#CorePath}\*"; DestDir: "{app}\Core"; Flags: createallsubdirs ignoreversion recursesubdirs
+
+; Required graphic assets
+Source: "{#CommonAssets}\Icon\*.png"; DestDir: "{app}\Assets\Icon"; Flags: createallsubdirs ignoreversion recursesubdirs
+Source: "{#CommonAssets}\Icon\PCBCleaner.ico"; DestDir: "{app}\Assets\Icon"; Flags: ignoreversion
+
+; Edition launchers
+Source: "{#EditionPath}\*"; DestDir: "{app}"; Flags: createallsubdirs ignoreversion recursesubdirs
+
+; Other files
+Source: "{#AppFilesPath}\installer\license.txt"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#AppFilesPath}\README.md"; DestDir: "{app}"; Flags: ignoreversion
+
 
 [Icons]
-Name: "{group}\Limpieza Manual"; Filename: "{app}\Limpiar.cmd"; IconFilename: "{app}\PCBCleaner.ico"
+Name: "{group}\Limpieza Manual"; Filename: "{app}\Limpiar.cmd"; IconFilename: "{app}\Assets\Icon\PCBCleaner.ico"
 Name: "{group}\PCB Script License"; Filename: "{app}\license.txt";
-Name: "{commondesktop}\Limpieza Manual"; Filename: "{app}\Limpiar.cmd"; IconFilename: "{app}\PCBCleaner.ico"
+Name: "{group}\Ver notas en línea"; Filename: "https://github.com/pcbogota/pcb-cleaner";
+Name: "{commondesktop}\Limpieza Manual"; Filename: "{app}\Limpiar.cmd"; IconFilename: "{app}\Assets\Icon\PCBCleaner.ico"
 
 [Run]
-; Ejecuta SI el checkbox "registrar_tarea" está marcado
 Filename: "powershell.exe"; \
-Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\CleanTemps.ps1"" -Install -Auto {code:GetTaskParam}"; \
+Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\{#CleanScript}"" -Install -Auto {code:GetTaskParam} {code:GetHibernate}"; \
 Flags: runhidden; \
-StatusMsg: "Registrando Tarea Programada de mantenimiento..."; \
-Check: WizardIsTaskSelected('registrar_tarea')
-
-; Nueva entrada: escribe en el registro si se marcó la hibernación
-Filename: "reg.exe"; \
-Parameters: "ADD ""HKLM\Software\PCBogota\PCB Cleaner"" /v DisableHibernation /t REG_DWORD /d 1 /f"; \
-Flags: runhidden; \
-Check: WizardIsTaskSelected('disable_hibernate')
-
-; Opcional: si NO se marcó, asegurar que la clave tenga 0
-Filename: "reg.exe"; \
-Parameters: "DELETE ""HKLM\Software\PCBogota\PCB Cleaner"" /v HibernateDisabled /f"; \
-Flags: runhidden; \
-Check: not WizardIsTaskSelected('disable_hibernation')
+StatusMsg: "Configurando el limpiador. Espera..."
 
 [Code]
 procedure CurPageChanged(CurPageID: Integer);
@@ -121,7 +131,15 @@ end;
 function GetTaskParam(Param: String): String;
 begin
   if WizardIsTaskSelected('registrar_tarea') then
-    Result := '-CreateTask'
+    Result := '-Task'
+  else
+    Result := '';
+end;
+
+function GetHibernate(Param: String): String;
+begin
+  if WizardIsTaskSelected('disable_hibernation') then
+    Result := '-DisableHibernation'
   else
     Result := '';
 end;

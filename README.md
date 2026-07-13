@@ -1,25 +1,27 @@
-# ----- Readme incompleto y con información erronea, --- verficar!!!
-
-# <img src="https://raw.githubusercontent.com/pcbogota/pcb-cleaner/refs/heads/main/build/PCBCleaner.ico" alt="PCB Cleaner Icon" style="width: 40px; "> PCBogota Clean Script v1.0.0
+# <img src="https://raw.githubusercontent.com/pcbogota/pcb-cleaner/refs/heads/main/build/PCBCleaner.ico" alt="PCB Cleaner Icon" style="width: 40px; "> PCBogota Clean Script v1.1.0
 
 Script de limpieza y mantenimiento para Windows 10 / 11 que integra BleachBit Portable, reglas `winapp2.ini` y comandos nativos del sistema (DISM, CompactOS, vaciado de cachés, desactivación de hibernación, etc.).
 Incluye un **instalador creado con Inno Setup** que permite programar la limpieza automática al inicio de sesión.
 
 ## Características principales
 
-- Limpieza profunda del sistema sin afectar datos personales (cookies, sesiones, etc.).
+- Limpieza profunda del sistema sin afectar datos personales de usuario.
 - Cierre automático de Google Chrome para liberar su caché (sin borrar perfiles).
-- Integración con BleachBit Portable usando la configuración predefinida (`.ini`).
+- Integración con BleachBit Portable usando una configuración predefinida (`.ini`).
 - Descarga y aplicación de `winapp2.ini` (reglas de limpieza de la comunidad).
+- Eliminación de caché de Windows Update
+- Eliminación de repostes de errores de Windows
 - Comandos nativos:
   - `DISM /StartComponentCleanup /ResetBase`
   - `compact /compactos:always`
   - `powercfg /h off`
-  - `cleanmgr /sagerun:1`
+  - `cleanmgr /sagerun:999`
   - `Clear-RecycleBin`
 - Medición del espacio liberado paso a paso.
-- Instalación con opciona de creación de tarea programada al iniciar sesión.
 - Ejecución manual mediante acceso directo en escritorio / menú inicio.
+- Instalación con opciones para:
+  - Creación de tarea programada al iniciar sesión.
+  - Forzar deshabilitar hibernación en caso de requerirse
 
 ## Ejecución del script de limpieza luego de instalar
 
@@ -76,7 +78,7 @@ Si quieres modificar qué elementos limpia BleachBit, sigue estos pasos antes de
 (No requerido para ejecución)
 
 - [Inno Setup](https://jrsoftware.org/isdl.php) (versión 6 o superior)
-- [BleachBit portable (.zip)](https://www.bleachbit.org/download/windows) (versión 5.0.2 o compatible)
+- [BleachBit portable (.zip)](https://www.bleachbit.org/download/windows) (versión 6.0.0 o compatible)
 - Opcional (para generar assets gráficos):
   - [InkScape](https://inkscape.app/es/descargar/) – para editar archivos `.svg`
   - [GIMP](https://www.gimp.org/downloads/)– para generar el icono `.ico`
@@ -107,22 +109,22 @@ Revisa la directiva `#define MultiImage` en el script para ver los nombres esper
 
 ### 📦 Compilación del instalador
 
-1. Asegúrate de que el script `CleanTemps.ps1`, `Limpiar.cmd`, `IniData.psd1` y el icono estén en `build\`.
+1. Asegúrate que los archivos requeridos se listan en el archivo de instalación y existen en el dispositivo.
 1. Abre `installer\installer.iss` con Inno Setup.
 1. Ve al menú **Build** > **Compile** (o presiona `Ctrl+B`).
 
-El instalador se generará en la carpeta `output\` con el nombre `Setup PCBogota Cleaner Script v1.0.0.exe` (la versión pude cambiar).
+El instalador se generará en la carpeta `output\` con el nombre `Setup PCBogota Cleaner Script v1.1.0.exe` (la versión pude cambiar).
 
 #### 💡 Personalización de la tarea programada
 
 El instalador registra una tarea que ejecuta el script al **iniciar sesión**.
-Si deseas modificar su comportamiento (horario, condiciones, etc.), edita la variable `$xml` dentro de `CleanTemps.ps1` (sección `if ($Install)`).
+Si deseas modificar su comportamiento (horario, condiciones, etc.), edita la variable `$xml` dentro del archivo `cleaner-install.psm1` (función `New-CleanerScheduledTask`).
 
 ---
 
 ## 📄 Archivos de configuración (`.ini`)
 
-El script de Powershell `CleanTemps.ps1` genera automáticamente dos archivos durante la instalación (`CleanTemps.ps1 -install`):
+El script de Powershell `CleanTemps.ps1` genera automáticamente dos archivos durante la instalación (`Start-BasicClean.ps1 -install`):
 
 ### `BleachBit.ini`
 
@@ -147,60 +149,82 @@ El script de Powershell `CleanTemps.ps1` genera automáticamente dos archivos du
 ## Estructura del proyecto
 
 ```text
-Clean temps/                            # repositorio Git (monorepo)
-├── Core/                               # LÓGICA COMÚN (scripts PowerShell sin interfaz de usuario final)
-│   ├── bootstrap.ps1                   # Carga helpers, funciones de limpieza comunes, reportes
-│   ├── helpers.ps1                     # Write-Color, Stop-Process amigable, etc.
-│   ├── basic-clean.ps1                 # Funciones: Clear-ChromeCache, Clear-RecycleBin, Invoke-BleachBit...
-│   ├── reports.ps1                     # Get-SpaceMark, New-CleaningReport
-│   └── (opcional) config-defaults.psd1 # Valores por defecto, comunes (verificar que puede ser default)
+
+Clean temps/                                     # Repositorio Git (monorepo)
+├── Assets/                                      # Recursos gráficos y de marca
+│   └── Common/                                  # Compartidos entre ediciones
+│       ├── Icon/                                # Iconos (.ico, .png)
+│       │   ├── PCBCleaner.ico                   # Icono principal del proyecto
+│       │   ├── PCBNotifyAlertImage.png          # Imagen para de advertencia para notificaciones
+│       │   ├── PCBNotifyErrorImage.png          # Imagen para de error para notificaciones
+│       │   ├── PCBNotifyInfoImage.png           # Imagen para de información para notificaciones
+│       │   ├── PCB_icon-Alert.ico               # Icono para de advertencia
+│       │   ├── PCB_icon-Error.ico               # Icono para de error
+│       │   └── PCB_icon-Info.ico                # Icono para de información
+│       └── wizzard_branding/                    # Imágenes del asistente (varios DPI)
+│           ├── png_WizardImage_dpi-XXX.png      # Imágen del lateral Wizard (Con escala de pantalla)
+│           ├── png_WizardSmallImage_dpi-XXX.png # Imágen a la derecha del wizzard (Con escala de pantalla)
+│           └── readme.txt                       # Información de nombres de archivo requeridos
 │
-├── Editions/
-│   ├── Basic/                        # EDICIÓN LIGERA (solo Windows)
-│   │   ├── Start-BasicClean.ps1      # Orquestador: carga Core, ejecuta limpieza básica, muestra reporte simple
-│   │   └── Limpiar.cmd               # Lanzador para esta edición (puede ser genérico o con nombre distinto)
-│   │
-│   └── FlexiSign/                    # EDICIÓN PLUS (FlexiSign + RIPExpert si cabe)
-│       ├── clean-flexisign.ps1       # Funciones específicas FlexiSign: Stop-FlexiSign, Remove-OldTemp...
-│       ├── clean-ripexpert.ps1       # (si hay) Funciones para RIPExpert
-│       ├── Start-FlexiClean.ps1      # Orquestador: carga Core + limp. específicas, hace limpieza general, reporte avanzado
-│       └── Limpiar.cmd               # Lanzador (puede ser idéntico en contenido, solo cambia la ruta del .ps1)
+├── Core/                                     # Núcleo lógico (PowerShell)
+│   ├── Data/                                 # Archivos de configuración y datos
+│   │   ├── bleachbit-config.psd1             # Datos para bleachbit.ini y datos de descarga
+│   │   ├── bleachbit-manual-instructions.txt # Instrucciones de instalación manual de BleachBit portable
+│   │   └── processes-core.psd1               # Parametros y configuraciones para cerrar procesos
+│   ├── Modules/                              # Módulos reutilizables
+│   │   ├── Cleaners/                         # Scripts de limpieza individuales
+│   │   │   ├── Windows-error-report.psm1     # Comandos de limpieza de Reportes de Windows
+│   │   │   ├── Windows-update-cache.psm1     # Comandos de limpieza para caché de Windows Update
+│   │   │   ├── bleachbit-portable.psm1       # Comandos de ejecución de limpiador BleachBit
+│   │   │   ├── clean-manager.psm1            # Comandos para automatizar el Liberador de espacio en Windows
+│   │   │   ├── compactOs.psm1                # Comnados para ejecutr la compactación de Windows
+│   │   │   ├── disable-hibernation.psm1      # Comandos para deshabilitar hibernación del dispositivo
+│   │   │   ├── google-chrome.psm1            # Comandos para eliminar cache de Google Chrome
+│   │   │   ├── recycle-bin.psm1              # Comandos de limpieza de papelera de reciclaje
+│   │   │   ├── system-resotre-points.psm1    # Comandos para eliminar puntos de restauración del sistema
+│   │   │   ├── system-temps.psm1             # Comandos para limpiar carpetas temporales y logs del sistema
+│   │   │   └── winsxs.psm1                   # Comandos para borrar componentes obsoletos de Windows Update
+│   │   ├── Lib/                              # Código externo (C#)
+│   │   │   └── windowsim.cs                  # Librería para manejo de ventanas
+│   │   ├── cleaner-display.psm1              # Funciones para mostrar elementos en pantalla
+│   │   ├── cleaner-drive-utils.psm1          # Gestión de información sobre de unidades de alamacenamiento
+│   │   ├── cleaner-install.psm1              # Comandos de instalación del proyecto
+│   │   ├── cleaner-process.psm1              # Funciones para manejo de procesos durante la ejecución
+│   │   ├── cleaner-registry.psm1             # Código relativo al manejo de detos en registro de Windows
+│   │   ├── cleaner-snapshot.psm1             # Funciones para instantáneas de información en la ejecución
+│   │   ├── cleaner-utils.psm1                # Utilidades adicionales para el limpiador
+│   │   ├── pcb-00-bootstrap.psm1             # Funciones y utilidades de PCBogota - Inicializador
+│   │   ├── pcb-Take-own.psm1                 # Funciones y utilidades de PCBogota - Manejo de Privilegios
+│   │   ├── pcb-Window-sim.psm1               # Funciones y utilidades de PCBogota - Manejo de Ventanas
+│   │   ├── pcb-Write-to-user.psm1            # Funciones y utilidades de PCBogota - Escritura en pantalla
+│   │   └── pcb-modules-functions.psm1        # Funciones y utilidades de PCBogota - Archivos de modulos
+│   └── cleaner-initialize.ps1                # Inicializador de modulos y variables para el limpiador
 │
-├── Assets/                           # RECURSOS GRÁFICOS Y DE INSTALACIÓN COMPARTIDOS
-│   ├── Common/                       # Lo que se usa igual en todas las ediciones
-│   │   ├── icon/                     # Los .png del icono base (16, 20, 24... 256 px)
-│   │   ├── wizard branding/          # Imágenes SVG y PNG del wizard genéricas
-│   │   └── PCBCleaner.ico            # Icono principal (si es común)
-│   │
-│   ├── Basic/                        # Recursos específicos de la edición Basic (si los hay)
-│   │   └── (por ahora vacío, o con alguna imagen de wizard si quieres diferenciar)
-│   │
-│   └── FlexiSign/                    # Recursos específicos de FlexiSign (icono con plus, imágenes wizard adaptadas)
-│       ├── PCBCleaner_plus.ico       # Icono con distintivo
-│       └── wizard branding/          # PNGs del wizard con texto "FlexiSign Edition" o similar
+├── Editions/                    # Ediciones empaquetadas
+│   └── Basic/                   # Edición de limpiador básica
+│       ├── Limpiar.cmd          # Lanzador del script de Powershell
+│       └── Start-BasicClean.ps1 # Script principal del Proyecto
 │
-├── src/                              # FUENTES EDITABLES (GIMP, SVG) - se mantienen para futuros cambios
-│   ├── icon/                         # (igual que antes)
-│   └── wizard branding/
+├── installer/                     # Scripts del instalador (Inno Setup)
+│   ├── installer-BasicEdition.iss # Instalación de edición básica
+│   └── license.txt                # Licencia de uso y reconocimiento a creadores
 │
-├── tools/                             # UTILIDADES EXTERNAS Y TAREAS PROGRAMADAS
-│   ├── PCB_Limpieza De Windows_TASK.xml
-│   ├── sliming_bleachbit.ps           # instalador/configurador de BleachBit (común)
-│   └── (posible tarea programada para FlexiSign si difiere)
+├── src/                                  # Fuentes originales de recursos gráficos
+│   ├── icon/                             # Iconos SVG editables
+│   │   ├── SVG_icon_basicEdition.svg     # Icono principal del proyecto
+│   │   ├── SVG_icon_typeAlert.svg        # Icono para de advertencia
+│   │   ├── SVG_icon_typeError.svg        # Icono para de error
+│   │   └── SVG_icon_typeInfo.svg         # Icono para de información
+│   └── wizard branding/                  # SVG y tipografía de elementos de wizzard
+│       ├── SVG_basicEdition_branding.svg # Editable para los elementos gráficos del instalador
+│       └── future-earth.ttf              # Tipografía usada en los elementos gráficos
 │
-├── installer/                         # SCRIPTS DE INNO SETUP
-│   ├── Basic.iss                      # Instalador para la edición Basic
-│   ├── FlexiSign.iss                  # Instalador para la edición FlexiSign
-│   ├── license.txt                    # Licencia común (o una por edición en sus carpetas)
-│   └── (assets de installer globales, si los hay)
+├── tools/                               # Utilidades no necesarias para ejecutar el limpiador
+│   ├── PCB_Limpieza De Windows_TASK.xml # Muestra del XML para la tarea programada
+│   └── sliming_bleachbit.ps1            # Script para obtener una versión ligera de BleachBit
 │
-├── build/                             # (opcional, para scripts de compilación automatizada)
-│   └── build.ps1                     # Script que ejecuta los .iss y genera los instaladores
-│
-├── output/                            # Aquí se guardan los instaladores generados (Setup Basic..., Setup Flexi...)
-├── .gitignore
-├── README.md
-└── LICENSE
+├── LICENSE   # Licencia de uso del proyecto
+└── README.md # El documento que estás leyendo
 ```
 
 ---

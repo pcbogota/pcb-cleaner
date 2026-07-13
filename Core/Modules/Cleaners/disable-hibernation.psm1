@@ -1,18 +1,17 @@
 ﻿function Disable-HibernationIfConfigured {
 	# Verificar estado de hibernación desde la instalación
-	$snapshotName = "Deshabilitar Hibernación"
-	Set-Snapshot -Name $snapshotName
 	$regPath = "HKLM:\Software\PCBogota\PCB Cleaner"
 	$userChoice = Get-ItemProperty -Path $regPath -Name "DisableHibernation" -ErrorAction SilentlyContinue
 	if ($null -eq $userChoice -or $userChoice.DisableHibernation -ne 1) {
-		Set-SnapshotFinishTime -Name $snapshotName
 		return
 	}
+	$snapshotName = "Deshabilitar Hibernación"
+	Set-Snapshot -Name $snapshotName
 
-	# Vereficar estado actual de hibernación
+	# Verificar estado actual de hibernación
 	$hibernateReg = Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Power" -Name "HibernateEnabled" -ErrorAction SilentlyContinue
 	$currentlyEnabled = if ($hibernateReg) { $hibernateReg.HibernateEnabled -eq 1 } else { $true }
-	if ($currentlyEnabled) {
+	if ($currentlyEnabled -and $global:Aggressive) {
 		winfo "Desactivando hibernación del sistema." -Wider
 		powercfg /hibernate off
 

@@ -101,7 +101,7 @@ if "!errorAdvert!"=="true" ( ECHO. & ECHO ^>^>^> NO SE HA DEFINIDO NIGéN SCRIPT 
 :END
 echo.
 echo.
-echo >>>>>>>Finalizado!<<<<<<<
+echo --- Finalizado! ---
 echo.
 CALL :fn_pause
 call :fn_countdown

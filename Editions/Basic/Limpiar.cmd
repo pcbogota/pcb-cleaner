@@ -96,12 +96,12 @@ if defined ps1FilePath (
 	if exist "%ps1FilePath%" ( ECHO. & ECHO ^>^>^>    Ejecutando %ps1FilePath%... & ECHO. & powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%ps1FilePath%" %arguments%
 	set "exitcode=!errorlevel!" ) else ( set "errorAdvert=true" )
 ) else ( set "errorAdvert=true" )
-if "!errorAdvert!"=="true" ( ECHO. & ECHO ^>^>^> NO SE HA DEFINIDO NIGÈN SCRIPT PARA EJECUTAR!!!^<^<^< & ECHO Este archivo requiere de muchas modificaciones! & ECHO. )
+if "!errorAdvert!"=="true" ( ECHO. & echo oki & ECHO ^>^>^> NO SE HA DEFINIDO NIGÈN SCRIPT PARA EJECUTAR!!!^<^<^< & ECHO Este archivo requiere de muchas modificaciones! & ECHO. )
 
 :END
 echo.
 echo.
-echo >>>>>>>Finalizado!<<<<<<<
+echo --- Finalizado! ---
 echo.
 CALL :fn_pause
 call :fn_countdown
