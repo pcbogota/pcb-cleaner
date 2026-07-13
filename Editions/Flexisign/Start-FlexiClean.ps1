@@ -5,10 +5,6 @@
 
 ##Obtener espacio en disco actual
 
-## para inspección
-	- No realizar ninguna eliminación
-	- Guardar información de los archivos para eliminar
-
 ## obtener carpetas
 
 Las conocidas
@@ -45,78 +41,127 @@ C:\Program Files\SAi\FlexiPRINT 21 RIPControl Edition\Jobs and Settings\Temp
 
 --- 🛫 EJECUCION!
 
-🔴 FASE 0 — EVALUACIÓN INICIAL (SIEMPRE)
-	- leer del registro en HKLM:\SOFTWARE\PCBogota
-		- Ultima limpieza normal (fecha)
-		- Ultima limpieza agresiva (fecha)
-	- Mostrar en pantalla ultima vez que se ejecutó la limpieza normal y agresiva
-	- Medir espacio total, usado y libre por cada disco (C:, D:, etc.).
-	- Calcular % de uso.
-	- Guardar estas cifras para el informe final.
-	- Decidir modo de ejecución:
-		- Normal: todas las unidades de almacenamiento con uso menor a umbral de porcentaje de uso.
-		- Modo Agresivo: si algún disco ≥ umbral → activa automáticamente limpiezas extra y reducción de sesiones a 1.
+Hoja de ruta definitiva (implementación)
+- Crear flexi-processes.psd1 con los procesos Flexisign/PrintExpert que quieras incluir de fábrica (aunque luego se editen).
+Commit: 1	flexi-processes.psd1 (nuevo)	"Agrega configuración de procesos RIP para edición Flexisign"
 
-🔴 FASE 1 — CIERRE CONTROLADO DE PROGRAMAS (SIEMPRE)
-	-Verificar si flexiprint.exe o printexp.exe están corriendo.
-	- Si están activos → preguntar al usuario:
-		- [S] Saltar (no cerrar)
-		- [F] Forzar cierre
+- Crear flexi-folders.psd1 con las entradas de carpetas temporales del RIP y de trabajos de clientes (valores por defecto).
+Commit: 2	flexi-folders.psd1 (nuevo)	"Añade definición de carpetas a limpiar (sesiones y antigüedad)"
 
-	- Si elige forzar:
-		- Intentar cierre normal y esperar 10s.
-		- Si siguen activos → Stop-Process -Force.
 
-	Nota: Si están imprimiendo, advertir que se pueden perder trabajos.
+Fase 1 – Cierre de procesos
+- En clean-flexisign.ps1, cargar flexi-processes.psd1, filtrar por Scope='Initial' y llamar a Stop-ProcessGracefully por cada uno.
+Commit: 3	clean-flexisign.ps1 (Fase 1)	"Implementa cierre controlado de procesos desde flexi-processes.psd1"
 
-🔴 FASE 2 — LIMPIEZA BASE DE TEMPORALES DEL RIP (SIEMPRE)
-	Carpetas objetivo (deben ser variables configurables):
-	- C:\...FlexiSIGN\...\Temp, Spool, Jobs, Logs
-	- D:\...PrintExpert\...\Temp, Spool, Jobs, Logs
-	- Criterio: conservar últimas 4 sesiones (archivos agrupados por fecha de modificación).
-	- Borrar todo lo que no pertenezca a esas sesiones.
-	- Eliminar carpetas vacías resultantes.
-	- Si el disco está en Modo Agresivo → reducir a 1 sesión (solo dejar archivos de hoy).
+Fase 2 – Limpieza de temporales RIP (sesiones)
+- Recorrer flexi-folders.psd1 donde RetentionUnit = 'Sessions'.
+Commit: 4	clean-flexisign.ps1 (Fase 2, solo normal)	"Limpieza de temporales RIP por sesiones (4 en modo normal)"
 
-🔴 FASE 3 — ELIMINAR CARPETAS DE TRABAJOS DE CLIENTES (OPCIONAL)
-	- Condición: Solo si existe la carpeta raíz de trabajos (su existencia es variable por máquina).
-	- Antigüedad: Calcular $MesesLimite a partir de un parámetro (ej. 5 meses → 150 días).
-	- Criterio: Eliminar carpetas cuyo CreationTime sea anterior a la fecha límite.
-	- Eliminar carpetas vacías después del borrado.
+- Crear función Clear-RIPSessionFolders que implemente el agrupamiento diario y borre según RetentionValueNormal o Aggressive.
+Commit: 5	mismo script (Fase 2, agresivo)	"Soporte para modo agresivo en limpieza por sesiones (1 sesión)"
 
-🔴 FASE 4 — LIMPIEZA ADICIONAL DEL SISTEMA (SIEMPRE, PERO CON INTENSIDAD VARIABLE)
-	- 🔵 Spooler de impresión (detener servicio, borrar C:\Windows\System32\spool\PRINTERS\*, reiniciar).
-	- 🔵 Papelera de reciclaje de todos los discos.
-	- 🔵 Temporales del sistema (Windows y usuario):
-		- C:\Windows\Temp\*
-		- %AppData%\Local\Temp\*
-	- 🔵 Caché de actualizaciones (Delivery Optimization):
-		- C:\Windows\SoftwareDistribution\Download\*
-		- C:\Windows\ServiceProfiles\NetworkService\AppData\Local\Microsoft\Windows\DeliveryOptimization\Cache\*
-	- 🔵 Caché MSI: C:\Config.Msi\* (solo si no hay instalaciones en curso).
-	- 🔵 BleachBit (línea de comandos): ejecutar con lista blanca (sin navegadores).
-	- 🔵 Caché de navegadores (Opera, Firefox, Chrome, Edge): borrar solo caché, no cookies.
-	- 🔵 Liberador de espacio (cleanmgr): con /sagerun:1 y archivo .reg preimportado.
-	- 🔵 CompactOS: si no está activado, aplicar Compact /CompactOS:always.
+Fase 3 – Trabajos de clientes (días)
+- Mismo bucle sobre las entradas con RetentionUnit = 'Days', llamar a una función que elimine carpetas/archivos antiguos (puede reutilizar Clear-FolderContent si conviene, o directamente Remove-Item filtrado).
+Commit: 6	clean-flexisign.ps1 (Fase 3)	"Eliminación de trabajos de clientes por antigüedad configurable"
 
-	🟡 En Modo Agresivo (≥70%):
-	- 🟡 Restauraciones del sistema: vssadmin delete shadows /all /quiet (deja solo la última sombra con vssadmin resize shadowstorage).
-	- 🟡 Cachés de Adobe/Corel: buscar patrones temporales en %Temp% y %AppData% aunque su uso sea esporádico.
-	- 🟡 DISM: /StartComponentCleanup /ResetBase (sin reinicio).
-	- 🟡 Reducción de sesiones a 1: aplicar de nuevo Fase 2 con criterio mínimo.
+Fase 4 – Reintento agresivo
+- Si el modo es agresivo, volver a ejecutar la limpieza de las entradas de sesiones pero forzando RetentionValueAggressive (1 sesión).
+Commit: 7	clean-flexisign.ps1 (Fase 4)	"Reintento de limpieza de sesiones en modo agresivo"
 
-🔴 FASE 5 — ESTADÍSTICAS E INFORME (SIEMPRE)
-	- Medir espacio final por disco.
-	- Calcular y mostrar:
-		- Espacio inicial vs final.
-		- MB/GB liberados en cada fase:
-			- Temporales RIP
-			- Trabajos de clientes
-			- Sistema (spooler, papelera, temp, delivery, etc.)
-			- BleachBit + navegadores
-			- Componentes DISM + CompactOS
-		- Tiempo total de ejecución.
-	- Guardar en registro (MKLM:\SOFTWARE\PCBogota) ultima ejecución agresiva y ultima ejecución normal
+Ajustes finales
+- Integrar todo en clean-flexisign.ps1, probar, y verificar que Start-FlexiClean.ps1 apunte bien.
+Commit: 8	Start-FlexiClean.ps1 / instalador	"Ajustes finales de integración y empaquetado"
+
+<#
+.SYNOPSIS
+  Lista de procesos a cerrar durante la limpieza (Flexisign edition).
+
+.DESCRIPTION
+  Cada elemento es un hashtable con las siguientes propiedades:
+
+  | Propiedad            | Tipo   | Obligatoria  | Descripción                                            |
+  |----------------------|--------|--------------|--------------------------------------------------------|
+  | Name                 | string | Sí           | Nombre del proceso (sin .exe).                         |
+  | DisplayName          | string | No           | Nombre legible para el usuario.                        |
+  | CloseGracefully      | bool   | No           | Si $true, intenta cierre suave antes de forzar.        |
+  | ConfirmationMessage  | string | No           | Mensaje personalizado para la confirmación.            |
+  | CloseFunction        | string | No           | Nombre de función que se ejecuta para el proceso       |
+  | PathCondition        | string | No           | Patrón wildcard de la ruta del ejecutable.             |
+  | ReopenAfterClean     | bool   | No           | Si $true, Abre el proceso al terminar la limpiza.      |
+  | RequireConfirmation  | bool   | No           | Si es $true, pregunta al usuario antes de cerrar.      |
+  | Scope                | string | No           | 'Initial' (solo al inicio) o 'Always' (siempre).       |
+  | TreatAsSingleProcess | bool   | No           | Indica que sus procesos deben tratarse como uno solo.  |
+
+#
+
+@{
+	Processes = @(
+		@{
+			Name                = 'flexiprint'
+			DisplayName         = 'FlexiPRINT (RIP)'
+			CloseGracefully     = $true
+			RequireConfirmation = $true    # Pregunta al usuario
+			ConfirmationMessage = "FlexiPRINT está abierto. ¿Forzar cierre? (puede perder trabajos en curso)"
+			Scope               = 'Initial'
+			ReopenAfterClean    = $true
+		},
+		@{
+			Name                = 'printexp'
+			DisplayName         = 'PrintExpert'
+			CloseGracefully     = $true
+			RequireConfirmation = $true
+			ConfirmationMessage = "PrintExpert está abierto. ¿Forzar cierre?"
+			Scope               = 'Initial'
+			ReopenAfterClean    = $true
+		}
+		# Aquí se podrán añadir más programas en el futuro
+	)
+}
+
+2. Configuración de limpieza de carpetas: flexi-folders.psd1
+Un solo archivo con un array de definiciones de carpetas a limpiar. Cada entrada será un hashtable con estas propiedades:
+
+
+| Propiedad                | Tipo   | Obligatoria  | Descripción                                            |
+| -------------------------- | -------- | -------------- | -------------------------------------------------------- |
+| Name                     | string | Sí           | Nombre legible para logs.                              |
+| Path                     | string | si           | Ruta absoluta de la carpeta raíz a limpiar.            |
+| Force                    | bool   | No           | si se pasa `-Force` a `Remove-Item`                    |
+| ExecutionFunction        | string | No           | Nombre de una función personalizada para la limpieza   |
+| RetentionUnit            | string | si           | Unidad de retención: 'Sessions', 'Days' 'Months'       |
+| RetentionValueNormal     | int    | si           | Valor para modo normal                                 |
+| RetentionValueAggressive | int    | si           | Valor para modo agresivo                               |
+
+
+powershell
+@{
+	Folders = @(
+		@{
+			Name                     = 'Temporales FlexiSIGN'
+			Path                     = 'C:\Program Files\FlexiSIGN\Temp'
+			Force                    = $true
+			RetentionUnit            = 'Sessions'
+			RetentionValueNormal     = 4
+			RetentionValueAggressive = 1
+		},
+		@{
+			Name                     = 'Spool PrintExpert'
+			Path                     = 'D:\PrintExpert\Spool'
+			Force                    = $true
+			RetentionUnit            = 'Sessions'
+			RetentionValueNormal     = 4
+			RetentionValueAggressive = 1
+		},
+		@{
+			Name                     = 'Trabajos de clientes'
+			Path                     = 'E:\TrabajosClientes'
+			Force                    = $false
+			RetentionUnit            = 'Days'
+			RetentionValueNormal     = 150   # 5 meses
+			RetentionValueAggressive = 60
+		}
+	)
+}
 #>
 
 $targetFolder = "e:\.MyBackup"
