@@ -1,4 +1,14 @@
-﻿# Design Colors RIP temporales
+﻿[CmdletBinding()]
+param (
+	[switch]$Install,
+	[switch]$Task,
+	[switch]$Auto,
+	[switch]$DisableHibernation
+)
+
+
+
+# Design Colors RIP temporales
 
 
 <#
@@ -10,16 +20,20 @@
 Las conocidas
 C:\Program Files\SAi\FlexiPRINT 21 RIPControl Edition\Jobs and Settings\Temp\_PPS_tempAMJob
 C:\Program Files\SAi\FlexiPRINT 21 RIPControl Edition\Jobs and Settings\Temp\
-E:\temp_rip
 
-\HKEY_CURRENT_USER\SOFTWARE\Amiable\Production-3684
+HKEY_CURRENT_USER\SOFTWARE\Amiable\Production-3684
 
-
-C:\Program Files\SAi\FlexiPRINT 21 RIPControl Edition\Jobs and Settings\Temp
 
 [HKEY_CURRENT_USER\SOFTWARE\Amiable\Production-3684]
 "JobFolderPath"="C:\Program Files\SAi\FlexiPRINT 21 RIPControl Edition\Jobs and Settings\Jobs"
 "TempFolderPath"="C:\Program Files\SAi\FlexiPRINT 21 RIPControl Edition\Jobs and Settings\Temp"
+
+C:\Program Files\SAi\FlexiPRINT 21 RIPControl Edition\Program(64)\App2.exe
+
+
+C:\Printexp\PrintExp\PrintExp.exe
+
+
 
 ¿¿ carpetas de temporales para printexp???
 
@@ -72,97 +86,63 @@ Ajustes finales
 - Integrar todo en clean-flexisign.ps1, probar, y verificar que Start-FlexiClean.ps1 apunte bien.
 Commit: 8	Start-FlexiClean.ps1 / instalador	"Ajustes finales de integración y empaquetado"
 
-<#
-.SYNOPSIS
-  Lista de procesos a cerrar durante la limpieza (Flexisign edition).
-
-.DESCRIPTION
-  Cada elemento es un hashtable con las siguientes propiedades:
-
-  | Propiedad            | Tipo   | Obligatoria  | Descripción                                            |
-  |----------------------|--------|--------------|--------------------------------------------------------|
-  | Name                 | string | Sí           | Nombre del proceso (sin .exe).                         |
-  | DisplayName          | string | No           | Nombre legible para el usuario.                        |
-  | CloseGracefully      | bool   | No           | Si $true, intenta cierre suave antes de forzar.        |
-  | ConfirmationMessage  | string | No           | Mensaje personalizado para la confirmación.            |
-  | CloseFunction        | string | No           | Nombre de función que se ejecuta para el proceso       |
-  | PathCondition        | string | No           | Patrón wildcard de la ruta del ejecutable.             |
-  | ReopenAfterClean     | bool   | No           | Si $true, Abre el proceso al terminar la limpiza.      |
-  | RequireConfirmation  | bool   | No           | Si es $true, pregunta al usuario antes de cerrar.      |
-  | Scope                | string | No           | 'Initial' (solo al inicio) o 'Always' (siempre).       |
-  | TreatAsSingleProcess | bool   | No           | Indica que sus procesos deben tratarse como uno solo.  |
-
-#
-
-@{
-	Processes = @(
-		@{
-			Name                = 'flexiprint'
-			DisplayName         = 'FlexiPRINT (RIP)'
-			CloseGracefully     = $true
-			RequireConfirmation = $true    # Pregunta al usuario
-			ConfirmationMessage = "FlexiPRINT está abierto. ¿Forzar cierre? (puede perder trabajos en curso)"
-			Scope               = 'Initial'
-			ReopenAfterClean    = $true
-		},
-		@{
-			Name                = 'printexp'
-			DisplayName         = 'PrintExpert'
-			CloseGracefully     = $true
-			RequireConfirmation = $true
-			ConfirmationMessage = "PrintExpert está abierto. ¿Forzar cierre?"
-			Scope               = 'Initial'
-			ReopenAfterClean    = $true
-		}
-		# Aquí se podrán añadir más programas en el futuro
-	)
-}
-
 2. Configuración de limpieza de carpetas: flexi-folders.psd1
 Un solo archivo con un array de definiciones de carpetas a limpiar. Cada entrada será un hashtable con estas propiedades:
 
 
-| Propiedad                | Tipo   | Obligatoria  | Descripción                                            |
-| -------------------------- | -------- | -------------- | -------------------------------------------------------- |
-| Name                     | string | Sí           | Nombre legible para logs.                              |
-| Path                     | string | si           | Ruta absoluta de la carpeta raíz a limpiar.            |
-| Force                    | bool   | No           | si se pasa `-Force` a `Remove-Item`                    |
-| ExecutionFunction        | string | No           | Nombre de una función personalizada para la limpieza   |
-| RetentionUnit            | string | si           | Unidad de retención: 'Sessions', 'Days' 'Months'       |
-| RetentionValueNormal     | int    | si           | Valor para modo normal                                 |
-| RetentionValueAggressive | int    | si           | Valor para modo agresivo                               |
-
-
-powershell
-@{
-	Folders = @(
-		@{
-			Name                     = 'Temporales FlexiSIGN'
-			Path                     = 'C:\Program Files\FlexiSIGN\Temp'
-			Force                    = $true
-			RetentionUnit            = 'Sessions'
-			RetentionValueNormal     = 4
-			RetentionValueAggressive = 1
-		},
-		@{
-			Name                     = 'Spool PrintExpert'
-			Path                     = 'D:\PrintExpert\Spool'
-			Force                    = $true
-			RetentionUnit            = 'Sessions'
-			RetentionValueNormal     = 4
-			RetentionValueAggressive = 1
-		},
-		@{
-			Name                     = 'Trabajos de clientes'
-			Path                     = 'E:\TrabajosClientes'
-			Force                    = $false
-			RetentionUnit            = 'Days'
-			RetentionValueNormal     = 150   # 5 meses
-			RetentionValueAggressive = 60
-		}
-	)
-}
 #>
+
+#region PivilegesCheck
+if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(
+		[Security.Principal.WindowsBuiltInRole]::Administrator
+	)) {
+	Write-Host "Elevando privilegios..."
+	Start-Process powershell.exe `
+		-ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$($PSCommandPath)`"" `
+		-Verb RunAs
+	exit
+}
+Clear-Host
+#endregion PivilegesCheck
+
+
+#region PCB bootstrap
+$global:CleanerCorePath = "$PSScriptRoot\Core"
+$global:CleanerRootPath = "$PSScriptRoot"
+
+# Verificación de rutas dentro de carpeta de creación del proyecto
+if ($CleanerRootPath -imatch "\\Editions\\Flexisign") {
+	$global:CleanerCorePath = (Resolve-Path "$PSScriptRoot\..\..\Core").Path
+	$global:CleanerRootPath = (Resolve-Path "$PSScriptRoot\..\..").Path
+}
+
+Import-Module -DisableNameChecking "$global:CleanerCorePath\Modules\pcb-00-bootstrap.psm1" -Global -Force
+Initialize-PcbCleanerExecution
+
+# Cargar modulos adicionales del proyecto y variables globales
+. "$global:CleanerCorePath\cleaner-initialize.ps1"
+#endregion PCB bootstrap
+
+# Flexisign edition initializer
+$global:FlexiCleanerPath = "$PSScriptRoot\Flexisign-Cleaner"
+. "$global:FlexiCleanerPath\flexiCleaner-initalize.ps1"
+
+
+
+#region Bleachbit Installation
+if ($Install) {
+	Import-Module -DisableNameChecking "$global:CleanerCorePath\Modules\Cleaner-Install.psm1" -Global -Force
+	Import-Module -DisableNameChecking "$global:CleanerCorePath\Modules\Cleaners\bleachbit-portable.psm1" -Global -Force
+	Initialize-PCBRegistryPath -Auto:$Auto
+	Set-InstallationDate -Auto:$Auto
+	Set-CleanerHibernationStatus -Auto:$Auto -DisableHibernation:$DisableHibernation
+	Install-BleachBit -Task:$Task -Auto:$Auto
+	if ($Task) {
+		New-CleanerScheduledTask -Auto:$Auto
+	}
+	exit
+}
+
 
 $targetFolder = "e:\.MyBackup"
 $ActivityDays = 3  # Hoy + 2 días de trabajo
@@ -187,12 +167,14 @@ function Remove-TempElements {
 	} else {
 		$params.Directory = $true
 	}
+
+	# 1. Obtener todas las fechas de actividad disponibles en la carpeta
 	$elements = Get-ChildItem @params | Select-Object FullName, @{Name = "Fecha"; Expression = { $_.LastWriteTime.Date } }
 	$ActivitySessions = $elements | Select-Object -ExpandProperty Fecha -Unique | Sort-Object -Descending
 
-	# 2. Borrado de archivos basándose solo en sesiones
+	# 2. Borrado de archivos basándose solo en sesiones"
 	if ($ActivitySessions.Count -gt $ActivityDays) {
-		# Borramos archivos que pertenezcan a sesiones más antiguas que las 3 guardadas
+		# Borrar archivos que pertenezcan a sesiones más antiguas que las 3 guardadas
 		$RemoveFilesDates = $ActivitySessions | Select-Object -Skip $ActivityDays
 
 		foreach ($Date in $RemoveFilesDates) {
@@ -203,60 +185,120 @@ function Remove-TempElements {
 		}
 	}
 }
+# Remove-TempElements -Path $targetFolder -Type "File"
 
-Remove-TempElements -Path $targetFolder -Type "File"
+
+#region Execution
+
+# Importar TODOS los modulos de limpiadores comunes
+Get-ChildItem "$global:CleanerCorePath\Modules\Cleaners\*.psm1" | Import-Module -DisableNameChecking -Force
+
+
+# --- Fase 0: Evaluación del sistema ---
+$initialSnapshotName = "Inicio de limpiador"
+$initialShot = Set-Snapshot -Name $initialSnapshotName -Dates (Get-RegistryDates) -Return
+$global:AggressiveMode = Test-DrivesCritical -Drives $initialShot.Drives
+Show-PreCleanSystemSnapshot -Snapshot $initialShot
+Set-SnapshotFinishTime -Name $initialSnapshotName
+
+# --- Fase 1: Cierre de procesos comunes ---
+
+Write-Host "`n$("="*([console]::WindowWidth - 1) )`n"
+$processList = (Import-PowerShellDataFile "$CleanerCorePath\Data\processes-core.psd1").Processes
+
+$flexiData = Import-PowerShellDataFile "$FlexiCleanerPath\Data\flexi-processes.psd1" -ErrorAction SilentlyContinue
+if ($flexiData -and $flexiData.Processes) {
+	$processList += $flexiData.Processes
+}
+Stop-CleanerProcesses $processList -ask
+
+
+Start-ReopenedProcesses
+
+# Flexisign exclusive Test Area
+# Flexisign exclusive Test Area
+# Flexisign exclusive Test Area
+
+
+# Importar TODOS los modulos de limpiadores para la edición flexisign
+Get-ChildItem "$global:FlexiCleanerPath\Modules\*.psm1" | Import-Module -DisableNameChecking -Force
+
+
+
 exit
 
-# 1. Obtener todas las fechas de actividad disponibles en la carpeta
-$Files = Get-ChildItem -Path $targetFolder -File -Recurse |
-Select-Object FullName, @{Name = "Fecha"; Expression = { $_.LastWriteTime.Date } }
-$ActivitySessions = $Files | Select-Object -ExpandProperty Fecha -Unique | Sort-Object -Descending
 
-# 2. Borrado de archivos basándose solo en sesiones
-if ($ActivitySessions.Count -gt $ActivityDays) {
-	# Borramos archivos que pertenezcan a sesiones más antiguas que las 3 guardadas
-	$RemoveFilesDates = $ActivitySessions | Select-Object -Skip $ActivityDays
 
-	foreach ($Date in $RemoveFilesDates) {
-		$Files | Where-Object { $_.Fecha -eq $Date } | ForEach-Object {
-			Write-Host $_.FullName
-			# Remove-Item -Path $_.FullName -Force -ErrorAction SilentlyContinue
-		}
-	}
-}
-#$RemoveFilesDates
-exit
+# Flexisign exclusive Test Area
+# Flexisign exclusive Test Area
+# Flexisign exclusive Test Area
 
-# 3. Borrado de carpetas basándose en sesiones (Sin calendario)
-# Obtenemos todas las carpetas y sus fechas (usando el LastWriteTime de la carpeta)
-$Folders = Get-ChildItem -Path $targetFolder -Directory -Recurse |
-Select-Object FullName, @{Name = "Fecha"; Expression = { $_.LastWriteTime.Date } }
 
-# Identificamos qué fechas de carpetas están más allá de la sesión 10
-if ($ActivitySessions.Count -gt $SecureSessions) {
-	# Saltamos las 10 sesiones más recientes, todo lo anterior es "pasto para el fuego"
-	$RemoveFolderDates = $ActivitySessions | Select-Object -Skip $SecureSessions
 
-	foreach ($Date in $RemoveFolderDates) {
-		$Folders | Where-Object { $_.Fecha -eq $Date } | ForEach-Object {
-			# Borrado recursivo y forzado
-			# Remove-Item -Path $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
-			# Write-Host "Purgando carpeta de sesión antigua: $($_.FullName)"
-		}
-	}
-}
 
-# 4. Limpieza de carpetas huérfanas (vacías)
-# Solo borramos si la carpeta está realmente vacía
-$EmptyFolder = Get-ChildItem -Path $targetFolder -Directory -Recurse |
-Where-Object { (Get-ChildItem -Path $_.FullName -Recurse).Count -eq 0 }
+# --- Fase 2: Limpiadores especializados ---
+Write-Host "`n$("="*([console]::WindowWidth - 1) )`n"
+wRun "INICIANDO LIMPIEZA DE ALMACENAMIENTO"
 
-foreach ($carpeta in $EmptyFolder) {
-	# Validamos que no sea la carpeta raíz
-	if ($carpeta.FullName -ne $targetFolder) {
-		# Remove-Item -Path $carpeta.FullName -Force -ErrorAction SilentlyContinue
-		# Write-Host "Eliminando carpeta huérfana: $($carpeta.FullName)"
-	}
-}
+# Limpiador de Google Chrome
+Start-CleanGoogleChrome -ProcessData $processList
+Start-CleanGoogleChromeDeep -PreserveSessions
 
-exit
+# Ejecución de BleachBit basada en preferencias (bleachbit.ini)
+Start-BleachBitClean -ProcessData $processList
+
+
+# --- Fase 3 : # Limpieza con componentes de Windows
+
+# Vaciar Papeleras de Reciclaje
+Clear-AllRecycleBins -Drives $initialShot.Drives
+
+# Deshabilitar hibernación (Hay comantarios con instrucciones)
+Disable-HibernationIfConfigured
+
+# Limpieza de la carpetas de descargas de Windows Update (SoftwareDistribution y Delivery Optiomization)
+Clear-WindowsUpdateDownloads
+Clear-DeliveryOptimizationCache
+
+# Limpiar archivos de carpetas temporales y thumbnails de cache.
+Clear-SystemTemp
+
+# Limpiar Logs de eventos del sistema
+Clear-SystemLogs
+
+# Limpiar el informe de errores de Windows
+Clear-ErrorReports
+
+# Limpia puntos de restauración antiguos
+Clear-SystemRestorePoints
+
+# Limpieza de componentes obsoletos de window (WinSxS)
+Clear-WinSxSComponents
+
+# Limpieza con el liberador de espacio de Windows
+Start-WindowsDiskCleanup
+
+# Compactación del sistema operativo (CompactOS)
+Set-compactOS
+
+# Flexisign edition initializer
+##  Colocar funciones y ejecucuines de flexisign aqui!
+##  Colocar funciones y ejecucuines de flexisign aqui!
+##  Colocar funciones y ejecucuines de flexisign aqui!
+##  Colocar funciones y ejecucuines de flexisign aqui!
+##  Colocar funciones y ejecucuines de flexisign aqui!
+##  Colocar funciones y ejecucuines de flexisign aqui!
+
+
+
+wInfo "Limpieza finalizada."
+Set-SnapshotFinishTime -Name $initialSnapshotName
+Set-RegistryDates
+
+# Reapertura de procesos cerrados durante la ejecución
+Start-ReopenedProcesses
+Start-Sleep 2
+Write-Host "`n$("="*([console]::WindowWidth - 1) )`n"
+Show-FinalReport
+Write-Host "`n$("="*([console]::WindowWidth - 1) )`n"
+#endregion Execution
