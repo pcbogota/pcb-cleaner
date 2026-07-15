@@ -56,31 +56,6 @@ C:\Printexp\PrintExp\PrintExp.exe
 --- 🛫 EJECUCION!
 
 Hoja de ruta definitiva (implementación)
-- Crear flexi-processes.psd1 con los procesos Flexisign/PrintExpert que quieras incluir de fábrica (aunque luego se editen).
-Commit: 1	flexi-processes.psd1 (nuevo)	"Agrega configuración de procesos RIP para edición Flexisign"
-
-- Crear flexi-folders.psd1 con las entradas de carpetas temporales del RIP y de trabajos de clientes (valores por defecto).
-Commit: 2	flexi-folders.psd1 (nuevo)	"Añade definición de carpetas a limpiar (sesiones y antigüedad)"
-
-
-Fase 1 – Cierre de procesos
-- En clean-flexisign.ps1, cargar flexi-processes.psd1, filtrar por Scope='Initial' y llamar a Stop-ProcessGracefully por cada uno.
-Commit: 3	clean-flexisign.ps1 (Fase 1)	"Implementa cierre controlado de procesos desde flexi-processes.psd1"
-
-Fase 2 – Limpieza de temporales RIP (sesiones)
-- Recorrer flexi-folders.psd1 donde RetentionUnit = 'Sessions'.
-Commit: 4	clean-flexisign.ps1 (Fase 2, solo normal)	"Limpieza de temporales RIP por sesiones (4 en modo normal)"
-
-- Crear función Clear-RIPSessionFolders que implemente el agrupamiento diario y borre según RetentionValueNormal o Aggressive.
-Commit: 5	mismo script (Fase 2, agresivo)	"Soporte para modo agresivo en limpieza por sesiones (1 sesión)"
-
-Fase 3 – Trabajos de clientes (días)
-- Mismo bucle sobre las entradas con RetentionUnit = 'Days', llamar a una función que elimine carpetas/archivos antiguos (puede reutilizar Clear-FolderContent si conviene, o directamente Remove-Item filtrado).
-Commit: 6	clean-flexisign.ps1 (Fase 3)	"Eliminación de trabajos de clientes por antigüedad configurable"
-
-Fase 4 – Reintento agresivo
-- Si el modo es agresivo, volver a ejecutar la limpieza de las entradas de sesiones pero forzando RetentionValueAggressive (1 sesión).
-Commit: 7	clean-flexisign.ps1 (Fase 4)	"Reintento de limpieza de sesiones en modo agresivo"
 
 Ajustes finales
 - Integrar todo en clean-flexisign.ps1, probar, y verificar que Start-FlexiClean.ps1 apunte bien.
@@ -143,49 +118,33 @@ if ($Install) {
 	exit
 }
 
+# Flexisign exclusive Test Area
+# Flexisign exclusive Test Area
+# Flexisign exclusive Test Area
 
-$targetFolder = "e:\.MyBackup"
-$ActivityDays = 3  # Hoy + 2 días de trabajo
-$SecureSessions = 10  # Tu límite de 10 sesiones de uso
 
-function Remove-TempElements {
-	param (
-		[Parameter(Mandatory = $true)]
-		[string]$Path,
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-		[ValidateSet("File", "Directory")]
-		[string]$type
-	)
-	# 1. Obtener todas las fechas de actividad disponibles en la carpeta
+# Importar TODOS los modulos de limpiadores para la edición flexisign
+Get-ChildItem "$global:FlexiCleanerPath\Modules\*.psm1" | Import-Module -DisableNameChecking -Force
 
-	$params = @{
-		Path    = $Path
-		Recurse = $true
-	}
-	if ($type.ToLower() -eq "file") {
-		$params.File = $true
-	} else {
-		$params.Directory = $true
-	}
+# Importar las carpetas de los limpiadores
+$foldersList = (Import-PowerShellDataFile "$global:FlexiCleanerPath\Data\flexi-cleaner-folders.psd1").Folders
+$foldersList | Remove-TempFolderSet
 
-	# 1. Obtener todas las fechas de actividad disponibles en la carpeta
-	$elements = Get-ChildItem @params | Select-Object FullName, @{Name = "Fecha"; Expression = { $_.LastWriteTime.Date } }
-	$ActivitySessions = $elements | Select-Object -ExpandProperty Fecha -Unique | Sort-Object -Descending
+exit
 
-	# 2. Borrado de archivos basándose solo en sesiones"
-	if ($ActivitySessions.Count -gt $ActivityDays) {
-		# Borrar archivos que pertenezcan a sesiones más antiguas que las 3 guardadas
-		$RemoveFilesDates = $ActivitySessions | Select-Object -Skip $ActivityDays
-
-		foreach ($Date in $RemoveFilesDates) {
-			$elements | Where-Object { $_.Fecha -eq $Date } | ForEach-Object {
-				Write-Host $_.FullName
-				# Remove-Item -Path $_.FullName -Force -ErrorAction SilentlyContinue
-			}
-		}
-	}
+if (Test-DrivesCritical -Drives Measure-alldrives) {
+	$global:AggressiveMode = $true
+	# Remover los temporales de flexisign en modo agresivo
+	$foldersList | Remove-TempFolderSet
 }
-# Remove-TempElements -Path $targetFolder -Type "File"
+
+
+
+# Flexisign exclusive Test Area
+# Flexisign exclusive Test Area
+# Flexisign exclusive Test Area
+
+
 
 
 #region Execution
@@ -211,29 +170,6 @@ if ($flexiData -and $flexiData.Processes) {
 	$processList += $flexiData.Processes
 }
 Stop-CleanerProcesses $processList -ask
-
-
-Start-ReopenedProcesses
-
-# Flexisign exclusive Test Area
-# Flexisign exclusive Test Area
-# Flexisign exclusive Test Area
-
-
-# Importar TODOS los modulos de limpiadores para la edición flexisign
-Get-ChildItem "$global:FlexiCleanerPath\Modules\*.psm1" | Import-Module -DisableNameChecking -Force
-
-
-
-exit
-
-
-
-# Flexisign exclusive Test Area
-# Flexisign exclusive Test Area
-# Flexisign exclusive Test Area
-
-
 
 
 # --- Fase 2: Limpiadores especializados ---

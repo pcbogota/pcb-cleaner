@@ -1,6 +1,6 @@
 ﻿<#
 | Propiedad                | Tipo   | Obligatoria  | Descripción                                                |
-| ------------------------ | ------ | -------------- | ---------------------------------------------------------|
+| ------------------------ | ------ | ------------ | -----------------------------------------------------------|
 | Name                     | string | Sí           | Nombre legible para logs.                                  |
 | Path                     | string | Si           | Ruta absoluta de la carpeta raíz a limpiar.                |
 | RetentionUnit            | string | Si           | Unidad de retención: 'Sessions', 'Days' 'Months'           |
@@ -17,36 +17,40 @@
 		@{
 			Name                     = 'Temporales FlexiSIGN'
 			Path                     = 'C:\Program Files\SAi\FlexiPRINT 21 RIPControl Edition\Jobs and Settings\Temp'
-			Force                    = $true
 			RetentionUnit            = 'Sessions'
 			RetentionValueNormal     = 3
 			RetentionValueAggressive = 1
 			RegeditPath              = "HKEY_CURRENT_USER\SOFTWARE\Amiable\Production-3684"
 			RegeditAttribute         = "TempFolderPath"
+			Force                    = $true
 		},
 		@{
 			Name                     = 'Trabajos (Jobs) FlexiSIGN'
-			Path                     = 'C:\Program Files\SAi\FlexiPRINT 21 RIPControl Edition\Jobs and Settings\Temp'
-			Force                    = $true
+			Path                     = 'C:\Program Files\SAi\FlexiPRINT 21 RIPControl Edition\Jobs and Settings\Jobs'
 			RetentionUnit            = 'Sessions'
 			RetentionValueNormal     = 8
 			RetentionValueAggressive = 3
+			RegeditPath              = "HKEY_CURRENT_USER\SOFTWARE\Amiable\Production-3684"
+			RegeditAttribute         = "JobFolderPath"
+			Force                    = $true
 		},
 		@{
+			Group                    = "Temporales PrintExpert"
 			Name                     = 'Spool PrintExpert'
 			Path                     = 'D:\Temp_Rip'
-			Force                    = $true
 			RetentionUnit            = 'Sessions'
-			RetentionValueNormal     = 4
+			RetentionValueNormal     = 3
 			RetentionValueAggressive = 1
+			Force                    = $true
 		},
 		@{
+			Group                    = "Trabajos de clientes"
 			Name                     = 'Trabajos de clientes'
 			Path                     = 'D:\TrabajosClientes'
-			Force                    = $false
-			RetentionUnit            = 'Days'
-			RetentionValueNormal     = 180   # 6 meses
-			RetentionValueAggressive = 150   # 5 meses
+			RetentionUnit            = 'Months'
+			RetentionValueNormal     = 6
+			RetentionValueAggressive = 4
+			Force                    = $true
 		}
 	)
 }
