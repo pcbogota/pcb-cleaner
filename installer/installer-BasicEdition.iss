@@ -4,7 +4,7 @@
 
 
 #define MyAppName "PCBogota Cleaner Script"
-#define MyAppVersion "1.1.0"
+#define MyAppVersion "1.1.1"
 #define MyAppPublisher "PCBogota"
 #define MyAppURL "https://www.github.com/PCBogota"
 #define MyAppExeName "Limpiar.cmd"
