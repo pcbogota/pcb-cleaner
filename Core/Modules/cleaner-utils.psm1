@@ -20,7 +20,7 @@ function ConvertFrom-UnixTime {
 	try {
 		$seconds = [long]$Timestamp
 		return [datetime]::SpecifyKind(
-			[datetime]'1970-01-01Z'.AddSeconds($seconds),
+			([datetime]'1970-01-01Z').AddSeconds($seconds),
 			[DateTimeKind]::Utc
 		).ToLocalTime()
 	} catch {
