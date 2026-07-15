@@ -2,7 +2,7 @@
 	param(
 		[int]$KeepLatest = 2
 	)
-	$snapshotName = "Puntos de restauración del sistema"
+	$snapshotName = "Puntos de restauración"
 	Set-Snapshot -Name $snapshotName
 	Winfo "Verificando puntos de restauración del sistema..."
 

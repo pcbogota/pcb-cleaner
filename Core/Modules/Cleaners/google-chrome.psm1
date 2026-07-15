@@ -25,7 +25,7 @@ function Start-CleanGoogleChromeDeep {
 		[string]$ChromeUserData = "$env:LOCALAPPDATA\Google\Chrome\User Data",
 		[switch]$PreserveSessions
 	)
-	$snapshotName = "Limpieza profunda de Google Chrome"
+	$snapshotName = "Google Chrome (profundo)"
 	Set-Snapshot -Name $snapshotName
 
 	Winfo "Limpiando datos profundos de Google Chrome..."

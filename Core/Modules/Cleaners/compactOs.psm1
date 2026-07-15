@@ -1,5 +1,5 @@
 ﻿function Set-CompactOS {
-	$snapshotName = "Compactación de Sistema Operativo"
+	$snapshotName = "Compactación de Sistema"
 	Set-Snapshot -Name $snapshotName
 	$DriveStatus = Get-CriticalDrivesLetter -Drives (Measure-AllDrives)
 	$isSystemCritical = $env:SystemDrive -in $DriveStatus

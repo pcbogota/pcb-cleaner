@@ -3,7 +3,7 @@
 	param(
 		[int]$ProfileNumber = 999
 	)
-	$snapshotName = "Liberador de espacio de Windows"
+	$snapshotName = "Liberador de espacio"
 	Set-Snapshot -Name $snapshotName
 	$regPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches"
 	$keys = Get-ChildItem -Path $regPath -ErrorAction SilentlyContinue

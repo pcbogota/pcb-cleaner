@@ -1,5 +1,5 @@
 ﻿function Clear-ErrorReports {
-	$snapshotName = "Informes de errores de Windows"
+	$snapshotName = "Informes de error de Windows"
 	Set-Snapshot -Name $snapshotName
 	Winfo "Limpiando informes de errores de Windows (WER)..."
 
